@@ -57,7 +57,8 @@ C:\kinship\
 ### LifeLog
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/lifelog/ingest` | Upload voice note |
+| POST | `/api/lifelog/ingest` | Upload voice note (auto-transcribes if Whisper enabled) |
+| POST | `/api/lifelog/transcribe/:id` | Manually transcribe entry |
 | GET | `/api/lifelog/entries` | Get all entries |
 | GET | `/api/lifelog/entries/:date` | Get entries for date |
 | GET | `/api/lifelog/search?q=` | Search entries |
@@ -78,8 +79,12 @@ C:\kinship\
 ```bash
 cd C:\kinship
 npm install
+
+# Enable Whisper transcription (optional)
+set OPENAI_API_KEY=sk-your-key-here
+
 npm start
-# Open http://localhost:8760
+# Open http://localhost:8766
 ```
 
 ---
@@ -107,7 +112,7 @@ Features:
 - [x] JSON persistence
 
 ### Phase 2
-- [ ] Whisper transcription (local or API)
+- [x] Whisper transcription (OpenAI API)
 - [ ] Claude API for analysis
 - [ ] Automatic summaries
 - [ ] Sentiment tracking

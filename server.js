@@ -2,9 +2,27 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const OpenAI = require('openai');
 
 const app = express();
 const PORT = 8766;
+
+// ============ OPENAI / WHISPER ============
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+async function transcribeAudio(audioPath) {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY not set');
+  }
+
+  const response = await openai.audio.transcriptions.create({
+    file: fs.createReadStream(audioPath),
+    model: 'whisper-1',
+    response_format: 'text'
+  });
+
+  return response;
+}
 
 // ============ LOGGING ============
 const logBuffer = [];
@@ -71,9 +89,48 @@ app.post('/api/lifelog/ingest', upload.single('audio'), (req, res) => {
     saveEntries();
     log(`New entry saved: id=${entry.id}, audio=${hasAudio ? 'yes' : 'no'}`);
     res.json({ success: true, entryId: entry.id });
+
+    // Auto-transcribe if audio present and API key configured
+    if (hasAudio && process.env.OPENAI_API_KEY) {
+      transcribeAudio(req.file.path)
+        .then(transcript => {
+          entry.transcript = transcript;
+          entry.processed = true;
+          entry.transcribedAt = new Date().toISOString();
+          saveEntries();
+          log(`Transcribed entry ${entry.id}: "${transcript.substring(0, 50)}..."`);
+        })
+        .catch(err => {
+          log(`Transcription failed for ${entry.id}: ${err.message}`, 'ERROR');
+        });
+    }
   } catch (err) {
     log(`Ingest error: ${err.message}`, 'ERROR');
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Manual transcription endpoint
+app.post('/api/lifelog/transcribe/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  const entry = entries.find(e => e.id === id);
+
+  if (!entry) return res.status(404).json({ error: 'Entry not found' });
+  if (!entry.audioPath) return res.status(400).json({ error: 'No audio file' });
+  if (!process.env.OPENAI_API_KEY) return res.status(500).json({ error: 'OPENAI_API_KEY not configured' });
+
+  try {
+    log(`Manual transcription requested for entry ${id}`);
+    const transcript = await transcribeAudio(entry.audioPath);
+    entry.transcript = transcript;
+    entry.processed = true;
+    entry.transcribedAt = new Date().toISOString();
+    saveEntries();
+    log(`Transcribed entry ${id}: "${transcript.substring(0, 50)}..."`);
+    res.json({ success: true, transcript });
+  } catch (err) {
+    log(`Transcription failed for ${id}: ${err.message}`, 'ERROR');
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -162,20 +219,26 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'kinship-lifelog',
-    version: '1.0.0',
+    version: '1.1.0',
     uptime: process.uptime(),
-    entries: entries.length
+    entries: entries.length,
+    whisperEnabled: !!process.env.OPENAI_API_KEY
   });
 });
 
 app.get('/api/status', (req, res) => {
   const today = new Date().toISOString().split('T')[0];
   const todayEntries = entries.filter(e => e.timestamp.startsWith(today));
+  const transcribed = entries.filter(e => e.transcript).length;
+  const pending = entries.filter(e => e.audioPath && !e.transcript).length;
 
   res.json({
     total: entries.length,
     today: todayEntries.length,
-    lastEntry: entries[entries.length - 1]?.timestamp || null
+    transcribed,
+    pending,
+    lastEntry: entries[entries.length - 1]?.timestamp || null,
+    whisperEnabled: !!process.env.OPENAI_API_KEY
   });
 });
 
