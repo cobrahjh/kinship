@@ -57,8 +57,9 @@ C:\kinship\
 ### LifeLog
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/lifelog/ingest` | Upload voice note (auto-transcribes if Whisper enabled) |
+| POST | `/api/lifelog/ingest` | Upload voice note (auto-transcribes & analyzes) |
 | POST | `/api/lifelog/transcribe/:id` | Manually transcribe entry |
+| POST | `/api/lifelog/analyze/:id` | Manually analyze entry with Claude |
 | GET | `/api/lifelog/entries` | Get all entries |
 | GET | `/api/lifelog/entries/:date` | Get entries for date |
 | GET | `/api/lifelog/search?q=` | Search entries |
@@ -82,6 +83,9 @@ npm install
 
 # Enable Whisper transcription (optional)
 set OPENAI_API_KEY=sk-your-key-here
+
+# Enable Claude analysis (optional)
+set ANTHROPIC_API_KEY=sk-ant-your-key-here
 
 npm start
 # Open http://localhost:8766
@@ -113,9 +117,9 @@ Features:
 
 ### Phase 2
 - [x] Whisper transcription (OpenAI API)
-- [ ] Claude API for analysis
-- [ ] Automatic summaries
-- [ ] Sentiment tracking
+- [x] Claude API for analysis (summary, sentiment, topics, action items)
+- [x] Automatic summaries
+- [x] Sentiment tracking
 
 ### Phase 3
 - [ ] Daily/weekly digests
