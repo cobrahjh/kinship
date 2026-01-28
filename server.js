@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = 8760;
+const PORT = 8766;
 
 // Ensure data directory exists
 const dataDir = path.join(__dirname, 'data');

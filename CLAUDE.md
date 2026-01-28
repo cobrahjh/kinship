@@ -8,7 +8,7 @@
 
 Kinship is a voice-first personal companion that captures your voice notes effortlessly, understands what you meant, and connects ideas across days, weeks, and months.
 
-**Port:** 8760
+**Port:** 8766
 **Stack:** Node.js, Express, JSON file storage
 
 ---
