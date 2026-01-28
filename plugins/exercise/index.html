@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#2563eb">
+  <title>MS Exercise Companion</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f3f4f6;min-height:100vh;padding-bottom:80px}
+    .container{max-width:480px;margin:0 auto;padding:16px}
+    .card{background:#fff;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+    .card-gradient{background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;border-radius:16px;padding:20px;margin-bottom:16px}
+    h1{font-size:24px;font-weight:700}h2{font-size:20px;font-weight:700;margin-bottom:16px}h3{font-size:16px;font-weight:600}
+    .text-sm{font-size:14px}.text-gray{color:#6b7280}
+    .timer-display{font-size:56px;font-family:monospace;font-weight:700;text-align:center;color:#1f2937;padding:16px 0}
+    .btn{padding:12px 24px;border-radius:12px;font-weight:600;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-size:16px}
+    .btn-green{background:#22c55e;color:#fff}.btn-red{background:#ef4444;color:#fff}.btn-gray{background:#e5e7eb;color:#374151}
+    .btn-blue{background:#2563eb;color:#fff;width:100%;justify-content:center}
+    .btn-group{display:flex;gap:12px;justify-content:center;margin-top:16px}
+    .preset-group{display:flex;gap:8px;justify-content:center;margin-top:12px}
+    .preset-btn{padding:6px 16px;background:#f3f4f6;border:none;border-radius:8px;font-size:14px;cursor:pointer}
+    .category-btn{width:100%;background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:space-between;border:none;cursor:pointer;text-align:left}
+    .category-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px}
+    .category-info{display:flex;align-items:center;gap:12px}
+    .exercise-item{background:#fff;border-radius:12px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+    .exercise-header{padding:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border:none;background:none;width:100%;text-align:left}
+    .exercise-details{padding:16px;border-top:1px solid #f3f4f6;background:#f9fafb}
+    .exercise-images{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:12px}
+    .exercise-images img{max-width:48%;height:auto;border-radius:12px;object-fit:cover}
+    .exercise-images img.single{max-width:80%}
+    .position-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .position-tag{padding:4px 12px;background:#dbeafe;color:#1d4ed8;border-radius:20px;font-size:13px}
+    .checkbox{width:32px;height:32px;border-radius:50%;border:2px solid #d1d5db;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+    .checkbox.checked{background:#22c55e;border-color:#22c55e;color:#fff}
+    .exercise-name{font-weight:500}.exercise-name.completed{text-decoration:line-through;color:#9ca3af}
+    .alarm-item{background:#fff;border-radius:12px;padding:16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+    .alarm-info{display:flex;align-items:center;gap:12px}
+    .toggle-btn{padding:4px 12px;border-radius:20px;font-size:13px;border:none;cursor:pointer}
+    .toggle-on{background:#dcfce7;color:#166534}.toggle-off{background:#f3f4f6;color:#6b7280}
+    .delete-btn{background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;font-size:18px}
+    input[type="time"],input[type="text"]{width:100%;padding:14px;border:1px solid #e5e7eb;border-radius:12px;font-size:16px;margin-bottom:12px}
+    .tip-box{background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:16px}
+    .tip-box h3{color:#92400e}.tip-box p{color:#a16207;font-size:14px;margin-top:8px}
+    .info-box{background:#eff6ff;border:1px solid #93c5fd;border-radius:12px;padding:16px;margin-top:16px}
+    .info-box h3{color:#1e40af}.info-box ul{color:#1d4ed8;font-size:14px;margin-top:8px;padding-left:20px}
+    .guideline-card{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+    .guideline-card h3{color:#2563eb}.guideline-card p{color:#4b5563;margin-top:8px;line-height:1.5}
+    .remember-box{background:linear-gradient(135deg,#22c55e,#14b8a6);border-radius:12px;padding:16px;color:#fff}
+    .stat-box{background:rgba(255,255,255,.2);border-radius:12px;padding:8px 16px;display:inline-block;margin-top:16px}
+    .stat-number{font-size:28px;font-weight:700}
+    .back-btn{background:none;border:none;color:#2563eb;font-weight:500;cursor:pointer;margin-bottom:16px;font-size:16px}
+    .category-header{border-radius:16px;padding:20px;color:#fff;margin-bottom:16px}
+    .category-header span{font-size:32px}.category-header h2{margin-top:8px;margin-bottom:0}
+    .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;padding:8px 0;box-shadow:0 -2px 10px rgba(0,0,0,.1)}
+    .nav-container{max-width:480px;margin:0 auto;display:flex;justify-content:space-around}
+    .nav-btn{display:flex;flex-direction:column;align-items:center;padding:8px 16px;border-radius:12px;border:none;background:none;cursor:pointer;color:#6b7280}
+    .nav-btn.active{color:#2563eb;background:#eff6ff}
+    .nav-btn svg{width:24px;height:24px;margin-bottom:4px}.nav-btn span{font-size:12px}
+    .bg-amber{background:#f59e0b}.bg-blue{background:#3b82f6}.bg-purple{background:#8b5cf6}.bg-pink{background:#ec4899}
+    .bg-teal{background:#14b8a6}.bg-red{background:#ef4444}.bg-green{background:#22c55e}.bg-indigo{background:#6366f1}
+    .bg-orange{background:#f97316}.bg-rose{background:#f43f5e}
+    
+    /* Exercise Timer Styles */
+    .exercise-timer{background:#f0f9ff;border-radius:12px;padding:12px;margin-top:12px;border:1px solid #bae6fd}
+    .exercise-timer-display{font-size:32px;font-family:monospace;font-weight:700;text-align:center;color:#0369a1}
+    .exercise-timer-controls{display:flex;gap:8px;justify-content:center;margin-top:8px;align-items:center}
+    .timer-preset{padding:6px 12px;background:#e0f2fe;border:1px solid #7dd3fc;border-radius:8px;font-size:12px;cursor:pointer;font-weight:500}
+    .timer-preset.active{background:#0ea5e9;color:#fff;border-color:#0ea5e9}
+    .play-pause-btn{width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px}
+    .play-btn{background:#22c55e;color:#fff}
+    .pause-btn{background:#f59e0b;color:#fff}
+    .skip-btn{background:#6366f1;color:#fff;padding:6px 12px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:500}
+    
+    /* Auto-play Toggle */
+    .autoplay-bar{background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+    .autoplay-toggle{position:relative;width:48px;height:28px;background:#d1d5db;border-radius:14px;cursor:pointer;transition:background .2s}
+    .autoplay-toggle.active{background:#22c55e}
+    .autoplay-toggle::after{content:'';position:absolute;top:2px;left:2px;width:24px;height:24px;background:#fff;border-radius:50%;transition:transform .2s}
+    .autoplay-toggle.active::after{transform:translateX(20px)}
+    
+    /* Progress indicator */
+    .exercise-progress{font-size:13px;color:#6b7280;text-align:center;margin-bottom:12px}
+  </style>
+</head>
+<body>
+  <div class="container" id="app"></div>
+  <nav class="bottom-nav">
+    <div class="nav-container">
+      <button class="nav-btn active" data-tab="home" onclick="switchTab('home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span>Home</span>
+      </button>
+      <button class="nav-btn" data-tab="exercises" onclick="switchTab('exercises')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5h11M6.5 17.5h11M4 12h16"/></svg>
+        <span>Exercises</span>
+      </button>
+      <button class="nav-btn" data-tab="alarms" onclick="switchTab('alarms')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span>Alarms</span>
+      </button>
+      <button class="nav-btn" data-tab="guide" onclick="switchTab('guide')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a9 9 0 0 1 9 9c0 3.6-3 6.5-4.5 7.5-.4.3-.7.8-.7 1.3V21a1 1 0 0 1-1 1h-5.5a1 1 0 0 1-1-1v-1.2c0-.5-.3-1-.7-1.3C6 17.5 3 14.6 3 11a9 9 0 0 1 9-9z"/></svg>
+        <span>Guide</span>
+      </button>
+    </div>
+  </nav>
+  <script>
+const img = {
+marching:["data:image/jpeg;base64,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"]
+};
+
+const exercises = {
+  balance: {
+    title: "Balance & Walking", icon: "🚶", color: "bg-amber",
+    exercises: [
+      { name: "Marching in Place", instruction: "Lift knees high, maintain posture. Hold chair if needed.", positions: ["Standing"], images: img.marching },
+      { name: "Weight Shifts", instruction: "Shift weight side to side slowly.", positions: ["Standing"] },
+      { name: "Tandem Stance", instruction: "Stand heel-to-toe. Hold 30 seconds.", positions: ["Standing"] },
+      { name: "Single Leg Stand", instruction: "Stand on one leg, hold support if needed.", positions: ["Standing"] }
+    ]
+  },
+  upperBody: {
+    title: "Upper Body", icon: "💪", color: "bg-blue",
+    exercises: [
+      { name: "Arm Raises", instruction: "Lift arms to shoulder height and lower slowly.", positions: ["Seated", "Standing"] },
+      { name: "Shoulder Rolls", instruction: "Roll shoulders forward 10x, then backward 10x.", positions: ["Seated", "Standing"] },
+      { name: "Wall Push-Ups", instruction: "Stand arm's length from wall, do modified push-ups.", positions: ["Standing"] },
+      { name: "Bicep Curls", instruction: "Curl weights or water bottles toward shoulders.", positions: ["Seated", "Standing"] }
+    ]
+  },
+  lowerBody: {
+    title: "Lower Body", icon: "🦵", color: "bg-purple",
+    exercises: [
+      { name: "Seated Leg Extensions", instruction: "Extend one leg straight, hold 5 seconds, lower slowly.", positions: ["Seated"] },
+      { name: "Ankle Circles", instruction: "Rotate ankles 10x each direction.", positions: ["Seated", "Lying Down"] },
+      { name: "Heel Raises", instruction: "Rise onto toes, hold, lower slowly.", positions: ["Standing"] },
+      { name: "Toe Raises", instruction: "Lift toes while keeping heels on ground.", positions: ["Standing", "Seated"] }
+    ]
+  },
+  stretching: {
+    title: "Stretching", icon: "🧘", color: "bg-pink",
+    exercises: [
+      { name: "Neck Stretches", instruction: "Gently tilt head toward each shoulder.", positions: ["Seated", "Standing"] },
+      { name: "Hamstring Stretch", instruction: "Extend leg, reach toward toes.", positions: ["Seated", "Lying Down"] },
+      { name: "Calf Stretch", instruction: "Step back, press heel to floor.", positions: ["Standing"] },
+      { name: "Side Stretch", instruction: "Raise one arm overhead, lean to opposite side.", positions: ["Seated", "Standing"] }
+    ]
+  },
+  aerobic: {
+    title: "Aerobic Exercises", icon: "❤️", color: "bg-rose",
+    exercises: [
+      { name: "Forward Punches", instruction: "Punch forward alternating arms at quick pace.", positions: ["Seated", "Standing"] },
+      { name: "Arm Swings", instruction: "Swing arms rhythmically up and down.", positions: ["Seated"] },
+      { name: "Seated Jumping Jacks", instruction: "Arms and legs out wide, then together.", positions: ["Seated", "Standing"] }
+    ]
+  }
+};
+
+const guidelines = [
+  { title: "Almost-Perfect Quality", text: "Your brain strengthens pathways for movements you repeat. Practice good form!" },
+  { title: "Repeat, Repeat, Repeat", text: "Aim for many good-quality repetitions." },
+  { title: "Rest as Needed", text: "Take breaks! Goal: 30 reps total across multiple sets." },
+  { title: "Choose Duration", text: "20-60 minutes at once OR spread throughout the day." },
+  { title: "Vary Settings", text: "Practice in different rooms for better transfer." },
+  { title: "Weekly Goal", text: "150 minutes per week. Example: 5 days × 30 min." }
+];
+
+let state = {
+  activeTab: 'home', selectedCategory: null, expandedExercise: null,
+  timerMinutes: 60, timerSeconds: 0, timerRunning: false,
+  alarms: JSON.parse(localStorage.getItem('msAlarms') || '[]'),
+  completedToday: JSON.parse(localStorage.getItem('msCompleted') || '[]'),
+  soundEnabled: true,
+  // Exercise timer state
+  autoPlay: JSON.parse(localStorage.getItem('msAutoPlay') || 'false'),
+  exerciseTimerSeconds: 60,
+  exerciseTimerRunning: false,
+  exerciseTimerPreset: 60
+};
+let timerInterval = null;
+let exerciseTimerInterval = null;
+
+function saveState() {
+  localStorage.setItem('msAlarms', JSON.stringify(state.alarms));
+  localStorage.setItem('msCompleted', JSON.stringify(state.completedToday));
+  localStorage.setItem('msAutoPlay', JSON.stringify(state.autoPlay));
+}
+
+function startTimer() {
+  state.timerRunning = true;
+  timerInterval = setInterval(() => {
+    if (state.timerSeconds === 0) {
+      if (state.timerMinutes === 0) { stopTimer(); playAlarm(); alert("⏰ Time to move!"); }
+      else { state.timerMinutes--; state.timerSeconds = 59; }
+    } else state.timerSeconds--;
+    render();
+  }, 1000);
+  render();
+}
+
+function stopTimer() { state.timerRunning = false; clearInterval(timerInterval); render(); }
+function resetTimer(m = 60) { stopTimer(); state.timerMinutes = m; state.timerSeconds = 0; render(); }
+
+// Exercise Timer Functions
+function startExerciseTimer() {
+  if (state.exerciseTimerRunning) return;
+  state.exerciseTimerRunning = true;
+  exerciseTimerInterval = setInterval(() => {
+    if (state.exerciseTimerSeconds <= 0) {
+      exerciseTimerComplete();
+    } else {
+      state.exerciseTimerSeconds--;
+      // Play warning beep at 3,2,1
+      if (state.exerciseTimerSeconds <= 3 && state.exerciseTimerSeconds > 0) {
+        playBeep(600, 100);
+      }
+      render();
+    }
+  }, 1000);
+  render();
+}
+
+function pauseExerciseTimer() {
+  state.exerciseTimerRunning = false;
+  clearInterval(exerciseTimerInterval);
+  render();
+}
+
+function setExerciseTimerPreset(seconds) {
+  pauseExerciseTimer();
+  state.exerciseTimerSeconds = seconds;
+  state.exerciseTimerPreset = seconds;
+  render();
+}
+
+function exerciseTimerComplete() {
+  pauseExerciseTimer();
+  playAlarm();
+  
+  // Mark current exercise as complete
+  if (state.selectedCategory !== null && state.expandedExercise !== null) {
+    const id = `${state.selectedCategory}-${state.expandedExercise}`;
+    if (!state.completedToday.includes(id)) {
+      state.completedToday.push(id);
+      saveState();
+    }
+  }
+  
+  // Auto-advance if enabled
+  if (state.autoPlay) {
+    advanceToNextExercise();
+  }
+  render();
+}
+
+function advanceToNextExercise() {
+  if (!state.selectedCategory) return;
+  const cat = exercises[state.selectedCategory];
+  const nextIndex = state.expandedExercise + 1;
+  
+  if (nextIndex < cat.exercises.length) {
+    state.expandedExercise = nextIndex;
+    state.exerciseTimerSeconds = state.exerciseTimerPreset;
+    // Auto-start if autoplay enabled
+    setTimeout(() => {
+      if (state.autoPlay) startExerciseTimer();
+    }, 500);
+  } else {
+    // End of category
+    playBeep(800, 500);
+    alert("🎉 Category complete!");
+  }
+}
+
+function skipExercise() {
+  pauseExerciseTimer();
+  state.exerciseTimerSeconds = state.exerciseTimerPreset;
+  advanceToNextExercise();
+}
+
+function toggleAutoPlay() {
+  state.autoPlay = !state.autoPlay;
+  saveState();
+  render();
+}
+
+function playAlarm() {
+  if (!state.soundEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 800; gain.gain.value = 0.3;
+    osc.start(); setTimeout(() => { osc.stop(); ctx.close(); }, 1000);
+  } catch(e) {}
+}
+
+function playBeep(freq = 600, duration = 100) {
+  if (!state.soundEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = freq; gain.gain.value = 0.2;
+    osc.start(); setTimeout(() => { osc.stop(); ctx.close(); }, duration);
+  } catch(e) {}
+}
+
+function addAlarm() {
+  const t = document.getElementById('alarmTime'), l = document.getElementById('alarmLabel');
+  if (!t.value) return;
+  state.alarms.push({ id: Date.now(), time: t.value, label: l.value || 'Exercise Time!', enabled: true, triggered: false });
+  saveState(); t.value = ''; l.value = ''; render();
+}
+
+function toggleAlarm(id) { state.alarms = state.alarms.map(a => a.id === id ? {...a, enabled: !a.enabled} : a); saveState(); render(); }
+function deleteAlarm(id) { state.alarms = state.alarms.filter(a => a.id !== id); saveState(); render(); }
+
+setInterval(() => {
+  const now = new Date();
+  const ct = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  state.alarms.forEach(a => { if (a.time === ct && a.enabled && !a.triggered) { playAlarm(); alert(`🔔 ${a.label}`); a.triggered = true; saveState(); }});
+}, 30000);
+
+function toggleComplete(id) {
+  if (state.completedToday.includes(id)) state.completedToday = state.completedToday.filter(i => i !== id);
+  else state.completedToday.push(id);
+  saveState(); render();
+}
+
+function switchTab(tab) {
+  state.activeTab = tab; state.selectedCategory = null; state.expandedExercise = null;
+  pauseExerciseTimer();
+  state.exerciseTimerSeconds = state.exerciseTimerPreset;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  render();
+}
+
+function selectCategory(c) { 
+  state.selectedCategory = c; 
+  state.expandedExercise = null; 
+  pauseExerciseTimer();
+  state.exerciseTimerSeconds = state.exerciseTimerPreset;
+  render(); 
+}
+
+function toggleExercise(i) { 
+  const wasExpanded = state.expandedExercise === i;
+  state.expandedExercise = wasExpanded ? null : i;
+  pauseExerciseTimer();
+  state.exerciseTimerSeconds = state.exerciseTimerPreset;
+  
+  // Auto-start if autoplay enabled and we just expanded
+  if (!wasExpanded && state.autoPlay) {
+    setTimeout(() => startExerciseTimer(), 300);
+  }
+  render(); 
+}
+
+function goBack() { 
+  state.selectedCategory = null; 
+  state.expandedExercise = null;
+  pauseExerciseTimer();
+  render(); 
+}
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function renderHome() {
+  const completed = state.completedToday.length;
+  const total = Object.values(exercises).reduce((sum, c) => sum + c.exercises.length, 0);
+  return `
+    <div class="card-gradient">
+      <h1>MS Exercise Companion</h1>
+      <p class="text-sm" style="opacity:.9;margin-top:8px">Neuroplasticity-based movement</p>
+      <div class="stat-box"><span class="stat-number">${completed}/${total}</span><br><span class="text-sm">Done Today</span></div>
+    </div>
+    <div class="card">
+      <h3>Session Timer</h3>
+      <div class="timer-display">${String(state.timerMinutes).padStart(2,'0')}:${String(state.timerSeconds).padStart(2,'0')}</div>
+      <div class="btn-group">
+        ${state.timerRunning
+          ? `<button class="btn btn-red" onclick="stopTimer()">⏸ Pause</button>`
+          : `<button class="btn btn-green" onclick="startTimer()">▶ Start</button>`}
+        <button class="btn btn-gray" onclick="resetTimer()">↺ Reset</button>
+      </div>
+      <div class="preset-group">
+        <button class="preset-btn" onclick="resetTimer(15)">15m</button>
+        <button class="preset-btn" onclick="resetTimer(30)">30m</button>
+        <button class="preset-btn" onclick="resetTimer(45)">45m</button>
+        <button class="preset-btn" onclick="resetTimer(60)">60m</button>
+      </div>
+    </div>
+    <div class="tip-box"><h3>💡 Today's Tip</h3><p>Quality over quantity! Focus on form.</p></div>
+  `;
+}
+
+function renderExercises() {
+  if (!state.selectedCategory) {
+    return `<h2>Exercise Categories</h2>
+      ${Object.entries(exercises).map(([k, c]) => `
+        <button class="category-btn" onclick="selectCategory('${k}')">
+          <div class="category-info">
+            <div class="category-icon ${c.color}">${c.icon}</div>
+            <div><h3>${c.title}</h3><p class="text-sm text-gray">${c.exercises.length} exercises</p></div>
+          </div><span>›</span>
+        </button>
+      `).join('')}`;
+  }
+  const cat = exercises[state.selectedCategory];
+  return `
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <div class="category-header ${cat.color}"><span>${cat.icon}</span><h2>${cat.title}</h2></div>
+    
+    <!-- Auto-play Toggle -->
+    <div class="autoplay-bar">
+      <div>
+        <span style="font-weight:500">Auto-play</span>
+        <span class="text-sm text-gray" style="margin-left:8px">Auto-advance when timer ends</span>
+      </div>
+      <div class="autoplay-toggle ${state.autoPlay ? 'active' : ''}" onclick="toggleAutoPlay()"></div>
+    </div>
+    
+    <div class="exercise-progress">Exercise ${state.expandedExercise !== null ? state.expandedExercise + 1 : '-'} of ${cat.exercises.length}</div>
+    
+    ${cat.exercises.map((ex, i) => {
+      const id = `${state.selectedCategory}-${i}`;
+      const done = state.completedToday.includes(id);
+      const open = state.expandedExercise === i;
+      const imgs = ex.images || [];
+      return `
+        <div class="exercise-item">
+          <button class="exercise-header" onclick="toggleExercise(${i})">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="checkbox ${done ? 'checked' : ''}" onclick="event.stopPropagation();toggleComplete('${id}')">${done ? '✓' : ''}</div>
+              <span class="exercise-name ${done ? 'completed' : ''}">${ex.name}</span>
+            </div><span>${open ? '▼' : '›'}</span>
+          </button>
+          ${open ? `
+            <div class="exercise-details">
+              <div class="exercise-images">
+                ${imgs.map(src => `<img src="${src}" class="${imgs.length === 1 ? 'single' : ''}" alt="${ex.name}">`).join('')}
+              </div>
+              <p>${ex.instruction}</p>
+              <div class="position-tags">${ex.positions.map(p => `<span class="position-tag">${p}</span>`).join('')}</div>
+              
+              <!-- Exercise Timer -->
+              <div class="exercise-timer">
+                <div class="exercise-timer-display" style="color:${state.exerciseTimerSeconds <= 3 ? '#ef4444' : '#0369a1'}">${formatTime(state.exerciseTimerSeconds)}</div>
+                <div class="exercise-timer-controls">
+                  <button class="timer-preset ${state.exerciseTimerPreset === 30 ? 'active' : ''}" onclick="event.stopPropagation();setExerciseTimerPreset(30)">30s</button>
+                  <button class="timer-preset ${state.exerciseTimerPreset === 60 ? 'active' : ''}" onclick="event.stopPropagation();setExerciseTimerPreset(60)">1m</button>
+                  <button class="timer-preset ${state.exerciseTimerPreset === 300 ? 'active' : ''}" onclick="event.stopPropagation();setExerciseTimerPreset(300)">5m</button>
+                  <button class="timer-preset ${state.exerciseTimerPreset === 600 ? 'active' : ''}" onclick="event.stopPropagation();setExerciseTimerPreset(600)">10m</button>
+                </div>
+                <div class="exercise-timer-controls" style="margin-top:8px">
+                  ${state.exerciseTimerRunning 
+                    ? `<button class="play-pause-btn pause-btn" onclick="event.stopPropagation();pauseExerciseTimer()">⏸</button>`
+                    : `<button class="play-pause-btn play-btn" onclick="event.stopPropagation();startExerciseTimer()">▶</button>`}
+                  <button class="skip-btn" onclick="event.stopPropagation();skipExercise()">Skip →</button>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('')}`;
+}
+
+function renderAlarms() {
+  return `<h2>Reminders & Alarms</h2>
+    <div class="card">
+      <h3>Add New Reminder</h3>
+      <input type="time" id="alarmTime">
+      <input type="text" id="alarmLabel" placeholder="Label">
+      <button class="btn btn-blue" onclick="addAlarm()">+ Add Reminder</button>
+    </div>
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+      <span>Sound Alerts</span>
+      <button class="toggle-btn ${state.soundEnabled ? 'toggle-on' : 'toggle-off'}" onclick="state.soundEnabled=!state.soundEnabled;render()">
+        ${state.soundEnabled ? '🔊 ON' : '🔇 OFF'}
+      </button>
+    </div>
+    <h3 style="margin-top:12px">Your Reminders</h3>
+    ${state.alarms.length === 0 ? '<p class="text-gray" style="text-align:center;padding:20px">No reminders set</p>' :
+      state.alarms.map(a => `
+        <div class="alarm-item">
+          <div class="alarm-info">
+            <span style="color:${a.enabled?'#3b82f6':'#d1d5db'}">🔔</span>
+            <div><p style="font-weight:500;${!a.enabled?'color:#9ca3af':''}">${a.time}</p><p class="text-sm text-gray">${a.label}</p></div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="toggle-btn ${a.enabled?'toggle-on':'toggle-off'}" onclick="toggleAlarm(${a.id})">${a.enabled?'ON':'OFF'}</button>
+            <button class="delete-btn" onclick="deleteAlarm(${a.id})">✕</button>
+          </div>
+        </div>
+      `).join('')}
+    <div class="info-box"><h3>💡 Triple Reminder System</h3><ul><li>Physical note on monitor</li><li>This app's timer & alarms</li><li>Phone backup alarm</li></ul></div>
+  `;
+}
+
+function renderGuide() {
+  return `<h2>Exercise Guidelines</h2><p class="text-gray" style="margin-bottom:16px">Key principles from The MSing Link:</p>
+    ${guidelines.map((g,i) => `<div class="guideline-card"><h3>${i+1}. ${g.title}</h3><p>${g.text}</p></div>`).join('')}
+    <div class="remember-box"><h3>🎯 Remember</h3><p>Neuroplasticity needs cumulative reps, not all at once. Take breaks, maintain quality!</p></div>`;
+}
+
+function render() {
+  const app = document.getElementById('app');
+  switch(state.activeTab) {
+    case 'home': app.innerHTML = renderHome(); break;
+    case 'exercises': app.innerHTML = renderExercises(); break;
+    case 'alarms': app.innerHTML = renderAlarms(); break;
+    case 'guide': app.innerHTML = renderGuide(); break;
+  }
+}
+
+render();
+</script>
+</body>
+</html>

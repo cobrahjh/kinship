@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2563eb">
+  <title>Kinship - LifeLog</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; min-height: 100vh; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+
+    /* Header */
+    .header { text-align: center; padding: 40px 20px; background: linear-gradient(135deg, #2563eb, #7c3aed); border-radius: 24px; margin-bottom: 24px; }
+    .header h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+    .header p { opacity: 0.9; font-size: 16px; }
+
+    /* Cards */
+    .card { background: #1e293b; border-radius: 16px; padding: 24px; margin-bottom: 16px; }
+    .card h2 { font-size: 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+    .card h2 span { font-size: 28px; }
+
+    /* Stats Grid */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: #1e293b; border-radius: 16px; padding: 20px; text-align: center; }
+    .stat-number { font-size: 36px; font-weight: 700; color: #3b82f6; }
+    .stat-label { font-size: 14px; color: #94a3b8; margin-top: 4px; }
+
+    /* Voice Capture */
+    .record-section { text-align: center; padding: 40px 20px; }
+    .record-btn { width: 140px; height: 140px; border-radius: 50%; border: 4px solid #334155; background: #1e293b; color: #f8fafc; font-size: 14px; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; }
+    .record-btn:hover { border-color: #3b82f6; transform: scale(1.05); }
+    .record-btn.recording { background: #ef4444; border-color: #dc2626; animation: pulse 1s infinite; }
+    .record-btn .icon { font-size: 40px; margin-bottom: 8px; }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+    .context-btns { display: flex; gap: 8px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+    .ctx-btn { padding: 10px 20px; border-radius: 24px; border: 1px solid #334155; background: #0f172a; color: #94a3b8; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .ctx-btn:hover { border-color: #3b82f6; }
+    .ctx-btn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+
+    /* Entries List */
+    .entries-list { max-height: 400px; overflow-y: auto; }
+    .entry-item { background: #0f172a; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #334155; }
+    .entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .entry-time { font-size: 12px; color: #64748b; }
+    .entry-context { padding: 4px 10px; border-radius: 12px; font-size: 12px; background: #334155; }
+    .entry-text { font-size: 15px; color: #cbd5e1; line-height: 1.5; }
+    .entry-actions { margin-top: 12px; display: flex; gap: 8px; }
+    .entry-btn { padding: 6px 12px; border-radius: 8px; border: none; font-size: 12px; cursor: pointer; }
+    .entry-btn.delete { background: #7f1d1d; color: #fecaca; }
+
+    /* Status Bar */
+    .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #1e293b; border-radius: 12px; margin-bottom: 24px; font-size: 14px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block; margin-right: 8px; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tab-btn { flex: 1; padding: 12px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: #94a3b8; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .tab-btn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+
+    .empty-state { text-align: center; padding: 40px; color: #64748b; }
+    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Kinship</h1>
+      <p>Your AI Memory Companion</p>
+    </div>
+
+    <div class="status-bar">
+      <div><span class="status-dot"></span>Ready</div>
+      <div id="datetime"></div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number" id="totalCount">0</div>
+        <div class="stat-label">Total Notes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="todayCount">0</div>
+        <div class="stat-label">Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="streakCount">1</div>
+        <div class="stat-label">Day Streak</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('capture')">Capture</button>
+      <button class="tab-btn" onclick="showTab('journal')">Journal</button>
+    </div>
+
+    <div id="captureTab">
+      <div class="card">
+        <h2><span>🎙️</span> Voice Capture</h2>
+        <p style="color: #94a3b8; margin-bottom: 20px;">Tap and hold to record. Release to save.</p>
+        <div class="record-section">
+          <button class="record-btn" id="recordBtn">
+            <span class="icon">🎤</span>
+            <span>TAP TO RECORD</span>
+          </button>
+          <div class="context-btns">
+            <button class="ctx-btn active" data-ctx="auto">Auto</button>
+            <button class="ctx-btn" data-ctx="health">🏥 Health</button>
+            <button class="ctx-btn" data-ctx="idea">💡 Idea</button>
+            <button class="ctx-btn" data-ctx="personal">🏠 Personal</button>
+            <button class="ctx-btn" data-ctx="work">💼 Work</button>
+          </div>
+          <p id="recordStatus" style="margin-top: 20px; color: #64748b;">Ready to capture your thoughts</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="journalTab" style="display: none;">
+      <div class="card">
+        <h2><span>📝</span> Your Notes</h2>
+        <div class="entries-list" id="entriesList">
+          <div class="empty-state">
+            <div class="icon">🎙️</div>
+            <p>No notes yet.<br>Record your first voice note!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let recording = false;
+    let mediaRecorder = null;
+    let chunks = [];
+    let context = 'auto';
+
+    // Update datetime
+    function updateDateTime() {
+      const now = new Date();
+      document.getElementById('datetime').textContent = now.toLocaleString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+      });
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 60000);
+
+    // Context buttons
+    document.querySelectorAll('.ctx-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.ctx-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        context = btn.dataset.ctx;
+      };
+    });
+
+    // Tabs
+    function showTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`.tab-btn[onclick="showTab('${tab}')"]`).classList.add('active');
+      document.getElementById('captureTab').style.display = tab === 'capture' ? 'block' : 'none';
+      document.getElementById('journalTab').style.display = tab === 'journal' ? 'block' : 'none';
+      if (tab === 'journal') loadEntries();
+    }
+
+    // Record button
+    document.getElementById('recordBtn').onclick = async () => {
+      const btn = document.getElementById('recordBtn');
+      const status = document.getElementById('recordStatus');
+
+      if (!recording) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          chunks = [];
+
+          mediaRecorder.ondataavailable = e => chunks.push(e.data);
+          mediaRecorder.onstop = uploadRecording;
+          mediaRecorder.start();
+
+          recording = true;
+          btn.classList.add('recording');
+          btn.innerHTML = '<span class="icon">⏹️</span><span>RECORDING...</span>';
+          status.textContent = 'Listening...';
+        } catch (err) {
+          status.textContent = 'Microphone access denied';
+          console.error(err);
+        }
+      } else {
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(t => t.stop());
+        recording = false;
+        btn.classList.remove('recording');
+        btn.innerHTML = '<span class="icon">🎤</span><span>TAP TO RECORD</span>';
+        status.textContent = 'Processing...';
+      }
+    };
+
+    async function uploadRecording() {
+      const blob = new Blob(chunks, { type: 'audio/webm' });
+      const form = new FormData();
+      form.append('audio', blob, 'recording.webm');
+      form.append('timestamp', new Date().toISOString());
+      form.append('device', 'web');
+      form.append('context', context);
+
+      try {
+        const res = await fetch('/api/lifelog/ingest', { method: 'POST', body: form });
+        const data = await res.json();
+        document.getElementById('recordStatus').textContent = data.success ? '✓ Saved!' : '✗ Failed';
+        loadStats();
+      } catch (e) {
+        document.getElementById('recordStatus').textContent = '✗ Network error';
+      }
+
+      setTimeout(() => {
+        document.getElementById('recordStatus').textContent = 'Ready to capture your thoughts';
+      }, 2000);
+    }
+
+    // Load stats
+    async function loadStats() {
+      try {
+        const status = await fetch('/api/status').then(r => r.json());
+        document.getElementById('totalCount').textContent = status.total || 0;
+        document.getElementById('todayCount').textContent = status.today || 0;
+      } catch (e) {
+        console.error('Failed to load stats:', e);
+      }
+    }
+
+    // Load entries
+    async function loadEntries() {
+      try {
+        const entries = await fetch('/api/lifelog/entries').then(r => r.json());
+        const list = document.getElementById('entriesList');
+
+        if (entries.length === 0) {
+          list.innerHTML = `
+            <div class="empty-state">
+              <div class="icon">🎙️</div>
+              <p>No notes yet.<br>Record your first voice note!</p>
+            </div>
+          `;
+          return;
+        }
+
+        list.innerHTML = entries.slice().reverse().map(e => `
+          <div class="entry-item" data-id="${e.id}">
+            <div class="entry-header">
+              <span class="entry-context">${getContextEmoji(e.context)} ${e.context}</span>
+              <span class="entry-time">${formatTime(e.timestamp)}</span>
+            </div>
+            <div class="entry-text">${e.transcript || '<em style="color:#64748b">Audio note (transcription pending)</em>'}</div>
+            <div class="entry-actions">
+              <button class="entry-btn delete" onclick="deleteEntry(${e.id})">Delete</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function getContextEmoji(ctx) {
+      const emojis = { auto: '📝', health: '🏥', idea: '💡', personal: '🏠', work: '💼' };
+      return emojis[ctx] || '📝';
+    }
+
+    function formatTime(ts) {
+      const d = new Date(ts);
+      return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    }
+
+    async function deleteEntry(id) {
+      if (!confirm('Delete this note?')) return;
+      try {
+        await fetch(`/api/lifelog/entries/${id}`, { method: 'DELETE' });
+        loadEntries();
+        loadStats();
+      } catch (e) {
+        alert('Failed to delete');
+      }
+    }
+
+    // Initial load
+    loadStats();
+  </script>
+</body>
+</html>
