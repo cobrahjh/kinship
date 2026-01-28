@@ -6,6 +6,18 @@ const fs = require('fs');
 const app = express();
 const PORT = 8766;
 
+// ============ LOGGING ============
+const logBuffer = [];
+const MAX_LOGS = 200;
+
+function log(msg, level = 'INFO') {
+  const ts = new Date().toISOString();
+  const line = `[${ts}] [${level}] ${msg}`;
+  logBuffer.push(line);
+  if (logBuffer.length > MAX_LOGS) logBuffer.shift();
+  console.log(line);
+}
+
 // Ensure data directory exists
 const dataDir = path.join(__dirname, 'data');
 const audioDir = path.join(dataDir, 'audio');
@@ -38,23 +50,31 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Ingest voice note
 app.post('/api/lifelog/ingest', upload.single('audio'), (req, res) => {
-  const { timestamp, device, context, transcript } = req.body;
-  const entry = {
-    id: Date.now(),
-    timestamp: timestamp || new Date().toISOString(),
-    device: device || 'web',
-    context: context || 'auto',
-    audioPath: req.file ? req.file.path : null,
-    transcript: transcript || null,
-    summary: null,
-    sentiment: null,
-    processed: false,
-    createdAt: new Date().toISOString()
-  };
-  entries.push(entry);
-  saveEntries();
-  console.log(`[LifeLog] New entry: ${entry.id} from ${entry.device} (${entry.context})`);
-  res.json({ success: true, entryId: entry.id });
+  try {
+    const { timestamp, device, context, transcript } = req.body;
+    const hasAudio = !!req.file;
+    log(`Ingest request: device=${device}, context=${context}, hasAudio=${hasAudio}`);
+
+    const entry = {
+      id: Date.now(),
+      timestamp: timestamp || new Date().toISOString(),
+      device: device || 'web',
+      context: context || 'auto',
+      audioPath: req.file ? req.file.path : null,
+      transcript: transcript || null,
+      summary: null,
+      sentiment: null,
+      processed: false,
+      createdAt: new Date().toISOString()
+    };
+    entries.push(entry);
+    saveEntries();
+    log(`New entry saved: id=${entry.id}, audio=${hasAudio ? 'yes' : 'no'}`);
+    res.json({ success: true, entryId: entry.id });
+  } catch (err) {
+    log(`Ingest error: ${err.message}`, 'ERROR');
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // Update entry (for transcript, etc.)
@@ -131,7 +151,12 @@ app.get('/api/lifelog/digest/:date', (req, res) => {
   });
 });
 
-// ============ HEALTH & STATUS ============
+// ============ HEALTH, STATUS & LOGS ============
+
+app.get('/api/logs', (req, res) => {
+  const limit = parseInt(req.query.limit) || 50;
+  res.json(logBuffer.slice(-limit));
+});
 
 app.get('/api/health', (req, res) => {
   res.json({
