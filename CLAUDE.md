@@ -80,6 +80,7 @@ C:\kinship\
 | DELETE | `/api/lifelog/entries/:id` | Delete entry |
 | GET | `/api/lifelog/digest/:date` | Get daily digest (add ?ai=true for AI narrative) |
 | GET | `/api/lifelog/digest/week/:date` | Get weekly digest (any date in week, ?ai=true for AI) |
+| GET | `/api/lifelog/patterns` | Pattern detection (?days=30, ?ai=true for insights) |
 
 ### System
 | Method | Endpoint | Description |
@@ -139,7 +140,7 @@ Features:
 - [x] Daily digests (AI-generated narrative, highlights, reflection)
 - [x] Weekly digests (themes, wins, challenges, patterns, week ahead)
 - [x] Semantic search with embeddings (OpenAI text-embedding-3-small)
-- [ ] Pattern detection
+- [x] Pattern detection
 - [ ] Plugin system for exercise, etc.
 
 ### Phase 4

@@ -125,6 +125,7 @@
       <button class="tab-btn" onclick="showTab('journal')">Journal</button>
       <button class="tab-btn" onclick="showTab('search')">Search</button>
       <button class="tab-btn" onclick="showTab('digest')">Digest</button>
+      <button class="tab-btn" onclick="showTab('patterns')">Patterns</button>
     </div>
 
     <div id="captureTab">
@@ -196,6 +197,31 @@
         </div>
       </div>
     </div>
+  
+    <div id="patternsTab" style="display: none;">
+      <div class="card">
+        <h2><span>📈</span> Pattern Detection</h2>
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap;">
+          <select id="patternDays" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc;">
+            <option value="7">Last 7 days</option>
+            <option value="14">Last 14 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="60">Last 60 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+          <label style="display: flex; align-items: center; gap: 6px; color: #94a3b8;">
+            <input type="checkbox" id="patternAI" checked> AI Insights
+          </label>
+          <button onclick="loadPatterns()" style="padding: 8px 16px; border-radius: 8px; border: none; background: #2563eb; color: #fff; cursor: pointer;">Analyze</button>
+        </div>
+        <div id="patternsContent">
+          <div class="empty-state">
+            <div class="icon">📈</div>
+            <p>Click Analyze to detect patterns<br>in your voice notes.</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -239,6 +265,7 @@
       document.getElementById('journalTab').style.display = tab === 'journal' ? 'block' : 'none';
       document.getElementById('searchTab').style.display = tab === 'search' ? 'block' : 'none';
       document.getElementById('digestTab').style.display = tab === 'digest' ? 'block' : 'none';
+      document.getElementById('patternsTab').style.display = tab === 'patterns' ? 'block' : 'none';
       if (tab === 'journal') loadEntries();
       if (tab === 'digest') {
         // Set default date to today
@@ -610,6 +637,106 @@
         });
       }
     });
+
+
+    async function loadPatterns() {
+      const container = document.getElementById('patternsContent');
+      const days = document.getElementById('patternDays').value;
+      const ai = document.getElementById('patternAI').checked;
+
+      container.innerHTML = '<div class="loading">Analyzing patterns...</div>';
+
+      try {
+        const res = await fetch('/api/lifelog/patterns?days=' + days + '&ai=' + ai);
+        const data = await res.json();
+
+        if (data.error || !data.patterns) {
+          container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>' + (data.error || 'No patterns found') + '</p></div>';
+          return;
+        }
+
+        const p = data.patterns;
+        let html = '';
+
+        // Summary stats
+        html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 20px;">';
+        html += '<div style="background: #1e293b; padding: 16px; border-radius: 8px; text-align: center;"><div style="font-size: 24px; font-weight: bold; color: #3b82f6;">' + p.totalEntries + '</div><div style="color: #94a3b8; font-size: 12px;">Entries</div></div>';
+        html += '<div style="background: #1e293b; padding: 16px; border-radius: 8px; text-align: center;"><div style="font-size: 24px; font-weight: bold; color: ' + (p.avgSentiment >= 0.6 ? '#22c55e' : p.avgSentiment >= 0.4 ? '#eab308' : '#ef4444') + ';">' + Math.round(p.avgSentiment * 100) + '%</div><div style="color: #94a3b8; font-size: 12px;">Avg Sentiment</div></div>';
+        html += '<div style="background: #1e293b; padding: 16px; border-radius: 8px; text-align: center;"><div style="font-size: 24px; font-weight: bold; color: #a855f7;">' + p.topTopics.length + '</div><div style="color: #94a3b8; font-size: 12px;">Topics</div></div>';
+        html += '</div>';
+
+        // Top topics
+        if (p.topTopics.length > 0) {
+          html += '<div style="margin-bottom: 20px;"><h3 style="color: #f8fafc; margin-bottom: 12px;">Top Topics</h3>';
+          html += '<div style="display: flex; flex-wrap: wrap; gap: 8px;">';
+          p.topTopics.forEach(t => {
+            html += '<span style="background: #3b82f6; padding: 6px 12px; border-radius: 20px; font-size: 14px;">' + t.topic + ' (' + t.count + ')</span>';
+          });
+          html += '</div></div>';
+        }
+
+        // Mood distribution
+        if (p.moodDistribution.length > 0) {
+          html += '<div style="margin-bottom: 20px;"><h3 style="color: #f8fafc; margin-bottom: 12px;">Mood Distribution</h3>';
+          html += '<div style="display: flex; flex-wrap: wrap; gap: 8px;">';
+          p.moodDistribution.forEach(m => {
+            html += '<span style="background: #6366f1; padding: 6px 12px; border-radius: 20px; font-size: 14px;">' + m.mood + ' (' + m.count + ')</span>';
+          });
+          html += '</div></div>';
+        }
+
+        // Time patterns
+        if (p.timePatterns.length > 0) {
+          html += '<div style="margin-bottom: 20px;"><h3 style="color: #f8fafc; margin-bottom: 12px;">Most Active Times</h3>';
+          html += '<div style="display: flex; flex-wrap: wrap; gap: 8px;">';
+          p.timePatterns.forEach(t => {
+            html += '<span style="background: #0d9488; padding: 6px 12px; border-radius: 20px; font-size: 14px;">' + t.timeLabel + ' (' + t.count + ')' + (t.commonMood ? ' - ' + t.commonMood : '') + '</span>';
+          });
+          html += '</div></div>';
+        }
+
+        // Day of week patterns
+        if (p.dayOfWeekPatterns.length > 0) {
+          html += '<div style="margin-bottom: 20px;"><h3 style="color: #f8fafc; margin-bottom: 12px;">Most Active Days</h3>';
+          html += '<div style="display: flex; flex-wrap: wrap; gap: 8px;">';
+          p.dayOfWeekPatterns.forEach(d => {
+            html += '<span style="background: #f59e0b; padding: 6px 12px; border-radius: 20px; font-size: 14px; color: #000;">' + d.day + ' (' + d.count + ')</span>';
+          });
+          html += '</div></div>';
+        }
+
+        // AI insights
+        if (data.ai) {
+          html += '<div style="background: linear-gradient(135deg, #1e1b4b, #312e81); padding: 20px; border-radius: 12px; margin-top: 20px;">';
+          html += '<h3 style="color: #c4b5fd; margin-bottom: 12px;">AI Insights</h3>';
+          html += '<p style="color: #e0e7ff; line-height: 1.6; margin-bottom: 16px;">' + data.ai.summary + '</p>';
+
+          if (data.ai.insights && data.ai.insights.length > 0) {
+            html += '<div style="margin-bottom: 12px;"><strong style="color: #a5b4fc;">Insights:</strong><ul style="margin: 8px 0; padding-left: 20px;">';
+            data.ai.insights.forEach(i => { html += '<li style="color: #e0e7ff; margin: 4px 0;">' + i + '</li>'; });
+            html += '</ul></div>';
+          }
+
+          if (data.ai.strengths && data.ai.strengths.length > 0) {
+            html += '<div style="margin-bottom: 12px;"><strong style="color: #86efac;">Strengths:</strong><ul style="margin: 8px 0; padding-left: 20px;">';
+            data.ai.strengths.forEach(s => { html += '<li style="color: #e0e7ff; margin: 4px 0;">' + s + '</li>'; });
+            html += '</ul></div>';
+          }
+
+          if (data.ai.suggestions && data.ai.suggestions.length > 0) {
+            html += '<div><strong style="color: #fcd34d;">Suggestions:</strong><ul style="margin: 8px 0; padding-left: 20px;">';
+            data.ai.suggestions.forEach(s => { html += '<li style="color: #e0e7ff; margin: 4px 0;">' + s + '</li>'; });
+            html += '</ul></div>';
+          }
+
+          html += '</div>';
+        }
+
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Error loading patterns</p></div>';
+      }
+    }
 
     // Initial load
     loadStats();

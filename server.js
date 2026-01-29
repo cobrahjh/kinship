@@ -199,6 +199,154 @@ Create an insightful weekly reflection. Respond in JSON format only:
   return JSON.parse(jsonMatch[0]);
 }
 
+// ============ PATTERN DETECTION ============
+function detectPatterns(entries, days = 30) {
+  const now = new Date();
+  const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+  // Filter entries within the time range
+  const recentEntries = entries.filter(e => new Date(e.timestamp) >= cutoff);
+
+  if (recentEntries.length === 0) {
+    return { error: 'No entries in the specified time range' };
+  }
+
+  // Topic frequency
+  const topicCounts = {};
+  recentEntries.forEach(e => {
+    (e.topics || []).forEach(topic => {
+      topicCounts[topic] = (topicCounts[topic] || 0) + 1;
+    });
+  });
+  const topTopics = Object.entries(topicCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([topic, count]) => ({ topic, count }));
+
+  // Mood frequency
+  const moodCounts = {};
+  recentEntries.forEach(e => {
+    if (e.mood) {
+      moodCounts[e.mood] = (moodCounts[e.mood] || 0) + 1;
+    }
+  });
+  const moodDistribution = Object.entries(moodCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([mood, count]) => ({ mood, count }));
+
+  // Sentiment over time (daily averages)
+  const sentimentByDay = {};
+  recentEntries.forEach(e => {
+    if (e.sentimentScore !== undefined) {
+      const day = e.timestamp.split('T')[0];
+      if (!sentimentByDay[day]) sentimentByDay[day] = [];
+      sentimentByDay[day].push(e.sentimentScore);
+    }
+  });
+  const sentimentTrend = Object.entries(sentimentByDay)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, scores]) => ({
+      date,
+      avgSentiment: scores.reduce((a, b) => a + b, 0) / scores.length,
+      entries: scores.length
+    }));
+
+  // Time-of-day patterns
+  const hourCounts = {};
+  const moodByHour = {};
+  recentEntries.forEach(e => {
+    const hour = new Date(e.timestamp).getHours();
+    hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+    if (e.mood) {
+      if (!moodByHour[hour]) moodByHour[hour] = [];
+      moodByHour[hour].push(e.mood);
+    }
+  });
+
+  const timePatterns = Object.entries(hourCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([hour, count]) => {
+      const moods = moodByHour[hour] || [];
+      const moodFreq = {};
+      moods.forEach(m => moodFreq[m] = (moodFreq[m] || 0) + 1);
+      const topMood = Object.entries(moodFreq).sort((a, b) => b[1] - a[1])[0];
+      return {
+        hour: parseInt(hour),
+        timeLabel: hour + ':00',
+        count,
+        commonMood: topMood ? topMood[0] : null
+      };
+    });
+
+  // Day-of-week patterns
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const dayOfWeekCounts = {};
+  recentEntries.forEach(e => {
+    const dayOfWeek = new Date(e.timestamp).getDay();
+    dayOfWeekCounts[dayOfWeek] = (dayOfWeekCounts[dayOfWeek] || 0) + 1;
+  });
+  const dayOfWeekPatterns = Object.entries(dayOfWeekCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([day, count]) => ({ day: dayNames[day], count }));
+
+  // Overall stats
+  const entriesWithSentiment = recentEntries.filter(e => e.sentimentScore !== undefined);
+  const avgSentiment = entriesWithSentiment.length > 0
+    ? entriesWithSentiment.reduce((sum, e) => sum + e.sentimentScore, 0) / entriesWithSentiment.length
+    : 0;
+
+  return {
+    period: { days, from: cutoff.toISOString().split('T')[0], to: now.toISOString().split('T')[0] },
+    totalEntries: recentEntries.length,
+    avgSentiment: Math.round(avgSentiment * 100) / 100,
+    topTopics,
+    moodDistribution,
+    sentimentTrend,
+    timePatterns,
+    dayOfWeekPatterns
+  };
+}
+
+async function generatePatternInsights(patterns) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error('ANTHROPIC_API_KEY not set');
+  }
+
+  const topicsStr = patterns.topTopics.map(t => t.topic + ' (' + t.count + 'x)').join(', ') || 'none';
+  const moodsStr = patterns.moodDistribution.map(m => m.mood + ' (' + m.count + 'x)').join(', ') || 'none';
+  const timesStr = patterns.timePatterns.map(t => t.timeLabel + ' (' + t.count + ' entries, mood: ' + (t.commonMood || 'unknown') + ')').join(', ');
+  const daysStr = patterns.dayOfWeekPatterns.map(d => d.day + ' (' + d.count + ')').join(', ');
+
+  const prompt = `Analyze these patterns from a personal voice journal over ${patterns.period.days} days (${patterns.totalEntries} entries):
+
+Top Topics: ${topicsStr}
+Mood Distribution: ${moodsStr}
+Average Sentiment: ${patterns.avgSentiment} (0=negative, 1=positive)
+Most Active Times: ${timesStr}
+Most Active Days: ${daysStr}
+
+Provide insightful observations. Respond in JSON format only:
+{
+  "insights": ["insight 1", "insight 2", "insight 3"],
+  "strengths": ["positive pattern 1"],
+  "areasForAttention": ["area that might need attention"],
+  "suggestions": ["actionable suggestion based on patterns"],
+  "summary": "A 2-3 sentence overall summary of what these patterns reveal"
+}`;
+
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 800,
+    messages: [{ role: 'user', content: prompt }]
+  });
+
+  const text = response.content[0].text;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('Invalid pattern insights response');
+  return JSON.parse(jsonMatch[0]);
+}
+
 // ============ LOGGING ============
 const logBuffer = [];
 const MAX_LOGS = 200;
@@ -677,6 +825,38 @@ app.get('/api/lifelog/digest/week/:date', async (req, res) => {
 app.get('/api/logs', (req, res) => {
   const limit = parseInt(req.query.limit) || 50;
   res.json(logBuffer.slice(-limit));
+});
+
+
+// Pattern detection endpoint
+app.get('/api/lifelog/patterns', async (req, res) => {
+  const days = parseInt(req.query.days) || 30;
+  const ai = req.query.ai === 'true';
+
+  log('Pattern detection requested: ' + days + ' days, AI insights: ' + ai);
+
+  try {
+    const patterns = detectPatterns(entries, days);
+
+    if (patterns.error) {
+      return res.json({ patterns: null, error: patterns.error });
+    }
+
+    if (ai) {
+      try {
+        const insights = await generatePatternInsights(patterns);
+        return res.json({ patterns, ai: insights });
+      } catch (aiErr) {
+        log('AI pattern insights failed: ' + aiErr.message, 'ERROR');
+        return res.json({ patterns, ai: null, aiError: aiErr.message });
+      }
+    }
+
+    res.json({ patterns });
+  } catch (err) {
+    log('Pattern detection failed: ' + err.message, 'ERROR');
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/api/health', (req, res) => {
