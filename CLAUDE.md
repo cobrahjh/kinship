@@ -66,6 +66,7 @@ C:\kinship\
 | PATCH | `/api/lifelog/entries/:id` | Update entry |
 | DELETE | `/api/lifelog/entries/:id` | Delete entry |
 | GET | `/api/lifelog/digest/:date` | Get daily digest (add ?ai=true for AI narrative) |
+| GET | `/api/lifelog/digest/week/:date` | Get weekly digest (any date in week, ?ai=true for AI) |
 
 ### System
 | Method | Endpoint | Description |
@@ -123,7 +124,7 @@ Features:
 
 ### Phase 3
 - [x] Daily digests (AI-generated narrative, highlights, reflection)
-- [ ] Weekly digests
+- [x] Weekly digests (themes, wins, challenges, patterns, week ahead)
 - [ ] Semantic search with embeddings
 - [ ] Pattern detection
 - [ ] Plugin system for exercise, etc.

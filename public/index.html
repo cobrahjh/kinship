@@ -161,15 +161,19 @@
 
     <div id="digestTab" style="display: none;">
       <div class="card">
-        <h2><span>📊</span> Daily Digest</h2>
-        <div style="display: flex; gap: 8px; margin-bottom: 16px; align-items: center;">
+        <h2><span>📊</span> <span id="digestTitle">Daily Digest</span></h2>
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap;">
+          <div style="display: flex; gap: 4px;">
+            <button id="digestDayBtn" onclick="setDigestMode('day')" class="ctx-btn active">Day</button>
+            <button id="digestWeekBtn" onclick="setDigestMode('week')" class="ctx-btn">Week</button>
+          </div>
           <input type="date" id="digestDate" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px;">
           <button onclick="loadDigest()" style="padding: 8px 16px; border-radius: 8px; border: none; background: #2563eb; color: #fff; cursor: pointer;">Generate</button>
         </div>
         <div id="digestContent">
           <div class="empty-state">
             <div class="icon">📊</div>
-            <p>Select a date and click Generate<br>to create your daily digest.</p>
+            <p>Select a date and click Generate<br>to create your digest.</p>
           </div>
         </div>
       </div>
@@ -181,6 +185,14 @@
     let mediaRecorder = null;
     let chunks = [];
     let context = 'auto';
+    let digestMode = 'day';
+
+    function setDigestMode(mode) {
+      digestMode = mode;
+      document.getElementById('digestDayBtn').classList.toggle('active', mode === 'day');
+      document.getElementById('digestWeekBtn').classList.toggle('active', mode === 'week');
+      document.getElementById('digestTitle').textContent = mode === 'day' ? 'Daily Digest' : 'Weekly Digest';
+    }
 
     // Update datetime
     function updateDateTime() {
@@ -429,22 +441,29 @@
       }
 
       const content = document.getElementById('digestContent');
-      content.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Generating your daily digest...</p></div>';
+      const isWeekly = digestMode === 'week';
+      content.innerHTML = `<div class="empty-state"><div class="icon">⏳</div><p>Generating your ${isWeekly ? 'weekly' : 'daily'} digest...</p></div>`;
 
       try {
-        const res = await fetch(`/api/lifelog/digest/${dateStr}?ai=true`);
+        const endpoint = isWeekly ? `/api/lifelog/digest/week/${dateStr}?ai=true` : `/api/lifelog/digest/${dateStr}?ai=true`;
+        const res = await fetch(endpoint);
         const data = await res.json();
 
         if (data.totalEntries === 0) {
-          content.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No entries for this date.</p></div>';
+          content.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No entries for this ${isWeekly ? 'week' : 'date'}.</p></div>`;
           return;
         }
 
         let html = `<div class="digest-stats">
           <div class="digest-stat">📝 ${data.totalEntries} entries</div>
+          ${isWeekly ? `<div class="digest-stat">📅 ${data.daysWithEntries} days</div>` : ''}
           <div class="digest-stat">💬 ${data.topics?.length || 0} topics</div>
           <div class="digest-stat">✅ ${data.actionItems?.length || 0} actions</div>
         </div>`;
+
+        if (isWeekly && data.weekStart) {
+          html += `<p style="color: #64748b; font-size: 13px; margin-bottom: 12px;">Week of ${data.weekStart} to ${data.weekEnd}</p>`;
+        }
 
         if (data.ai) {
           html += `
@@ -453,7 +472,37 @@
             <div class="digest-narrative">${data.ai.narrative}</div>
           `;
 
-          if (data.ai.highlights?.length) {
+          // Weekly-specific sections
+          if (isWeekly && data.ai.topThemes?.length) {
+            html += `<div class="digest-section">
+              <h3>🎯 Top Themes</h3>
+              <div class="entry-meta">${data.ai.topThemes.map(t => `<span class="entry-tag">${t}</span>`).join('')}</div>
+            </div>`;
+          }
+
+          if (isWeekly && data.ai.wins?.length) {
+            html += `<div class="digest-section">
+              <h3>🏆 Wins</h3>
+              <ul class="digest-list">${data.ai.wins.map(w => `<li>${w}</li>`).join('')}</ul>
+            </div>`;
+          }
+
+          if (isWeekly && data.ai.challenges?.length) {
+            html += `<div class="digest-section">
+              <h3>💪 Challenges</h3>
+              <ul class="digest-list">${data.ai.challenges.map(c => `<li>${c}</li>`).join('')}</ul>
+            </div>`;
+          }
+
+          if (isWeekly && data.ai.patterns?.length) {
+            html += `<div class="digest-section">
+              <h3>🔄 Patterns Noticed</h3>
+              <ul class="digest-list">${data.ai.patterns.map(p => `<li>${p}</li>`).join('')}</ul>
+            </div>`;
+          }
+
+          // Daily highlights (only for daily digest)
+          if (!isWeekly && data.ai.highlights?.length) {
             html += `<div class="digest-section">
               <h3>✨ Highlights</h3>
               <ul class="digest-list">${data.ai.highlights.map(h => `<li>${h}</li>`).join('')}</ul>
@@ -467,12 +516,13 @@
             </div>`;
           }
 
-          if (data.ai.reflection) {
-            html += `<div class="digest-reflection">💭 ${data.ai.reflection}</div>`;
+          // Reflection section
+          const reflectionText = data.ai.reflection || data.ai.weekAhead;
+          if (reflectionText) {
+            html += `<div class="digest-reflection">💭 ${reflectionText}</div>`;
           }
         } else if (data.aiError) {
           html += `<p style="color: #f59e0b;">AI digest unavailable: ${data.aiError}</p>`;
-          // Show basic stats
           if (data.topics?.length) {
             html += `<div class="digest-section"><h3>Topics</h3><div class="entry-meta">${data.topics.map(t => `<span class="entry-tag">${t}</span>`).join('')}</div></div>`;
           }

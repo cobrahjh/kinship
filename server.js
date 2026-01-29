@@ -110,6 +110,69 @@ Create a warm, insightful daily digest. Respond in JSON format only:
   return JSON.parse(jsonMatch[0]);
 }
 
+async function generateWeeklyDigest(weekEntries, startDate, endDate) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error('ANTHROPIC_API_KEY not set');
+  }
+
+  // Group entries by day
+  const byDay = {};
+  weekEntries.forEach(e => {
+    const day = e.timestamp.split('T')[0];
+    if (!byDay[day]) byDay[day] = [];
+    byDay[day].push(e);
+  });
+
+  // Build day summaries
+  const daySummaries = Object.entries(byDay).map(([day, entries]) => {
+    const dayName = new Date(day).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    const summaries = entries.map(e => e.summary || e.transcript?.substring(0, 100) || '(audio)').join('; ');
+    const moods = entries.filter(e => e.mood).map(e => e.mood).join(', ');
+    return `${dayName}: ${entries.length} entries. ${summaries}${moods ? ` [Moods: ${moods}]` : ''}`;
+  }).join('\n');
+
+  const allTopics = [...new Set(weekEntries.flatMap(e => e.topics || []))];
+  const allActions = weekEntries.flatMap(e => e.actionItems || []);
+  const sentimentCounts = {};
+  weekEntries.forEach(e => {
+    if (e.sentiment) sentimentCounts[e.sentiment] = (sentimentCounts[e.sentiment] || 0) + 1;
+  });
+
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1000,
+    messages: [{
+      role: 'user',
+      content: `Generate a weekly digest for ${startDate} to ${endDate}. This is a personal voice journal.
+
+Week summary by day:
+${daySummaries}
+
+Topics across the week: ${allTopics.join(', ') || 'none'}
+Sentiment distribution: ${Object.entries(sentimentCounts).map(([k,v]) => `${k}: ${v}`).join(', ') || 'none'}
+Action items collected: ${allActions.join('; ') || 'none'}
+
+Create an insightful weekly reflection. Respond in JSON format only:
+{
+  "title": "A brief title for the week (2-5 words)",
+  "narrative": "A 3-4 paragraph reflection on the week, written in second person (you), identifying patterns, growth, and themes across days",
+  "overallMood": "one word for the week's overall mood",
+  "topThemes": ["theme 1", "theme 2", "theme 3"],
+  "wins": ["accomplishment or positive moment 1", "win 2"],
+  "challenges": ["challenge faced 1"] or [],
+  "patterns": ["behavioral or emotional pattern noticed"],
+  "actionItems": ["consolidated/prioritized action items for next week"],
+  "weekAhead": "An encouraging thought or intention for the coming week"
+}`
+    }]
+  });
+
+  const text = response.content[0].text;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('Invalid weekly digest response');
+  return JSON.parse(jsonMatch[0]);
+}
+
 // ============ LOGGING ============
 const logBuffer = [];
 const MAX_LOGS = 200;
@@ -399,6 +462,69 @@ app.get('/api/lifelog/digest/:date', async (req, res) => {
   res.json(basicDigest);
 });
 
+// Get weekly digest
+app.get('/api/lifelog/digest/week/:date', async (req, res) => {
+  const dateStr = req.params.date; // Any date in the week (will find week boundaries)
+  const targetDate = new Date(dateStr);
+
+  // Find start of week (Sunday)
+  const startOfWeek = new Date(targetDate);
+  startOfWeek.setDate(targetDate.getDate() - targetDate.getDay());
+  const startStr = startOfWeek.toISOString().split('T')[0];
+
+  // Find end of week (Saturday)
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  const endStr = endOfWeek.toISOString().split('T')[0];
+
+  // Get all entries in the week
+  const weekEntries = entries.filter(e => {
+    const entryDate = e.timestamp.split('T')[0];
+    return entryDate >= startStr && entryDate <= endStr;
+  });
+
+  // Group by day
+  const byDay = {};
+  weekEntries.forEach(e => {
+    const day = e.timestamp.split('T')[0];
+    if (!byDay[day]) byDay[day] = { count: 0, moods: [], topics: [] };
+    byDay[day].count++;
+    if (e.mood) byDay[day].moods.push(e.mood);
+    if (e.topics) byDay[day].topics.push(...e.topics);
+  });
+
+  const sentiments = {};
+  weekEntries.forEach(e => {
+    if (e.sentiment) sentiments[e.sentiment] = (sentiments[e.sentiment] || 0) + 1;
+  });
+
+  const basicDigest = {
+    weekStart: startStr,
+    weekEnd: endStr,
+    totalEntries: weekEntries.length,
+    daysWithEntries: Object.keys(byDay).length,
+    byDay,
+    sentiments,
+    topics: [...new Set(weekEntries.flatMap(e => e.topics || []))],
+    actionItems: weekEntries.flatMap(e => e.actionItems || []),
+  };
+
+  // Generate AI digest if requested
+  if (req.query.ai === 'true' && process.env.ANTHROPIC_API_KEY && weekEntries.length > 0) {
+    try {
+      log(`Generating weekly AI digest for ${startStr} to ${endStr}`);
+      const aiDigest = await generateWeeklyDigest(weekEntries, startStr, endStr);
+      basicDigest.ai = aiDigest;
+      log(`Weekly digest generated: "${aiDigest.title}"`);
+    } catch (err) {
+      log(`Weekly AI digest failed: ${err.message}`, 'ERROR');
+      basicDigest.aiError = err.message;
+    }
+  }
+
+  res.json(basicDigest);
+});
+
 // ============ HEALTH, STATUS & LOGS ============
 
 app.get('/api/logs', (req, res) => {
@@ -410,7 +536,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'kinship-lifelog',
-    version: '1.3.0',
+    version: '1.4.0',
     uptime: process.uptime(),
     entries: entries.length,
     whisperEnabled: !!process.env.OPENAI_API_KEY,
