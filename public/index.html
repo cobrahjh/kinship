@@ -62,6 +62,19 @@
     .entry-tag.neutral { background: #3f3f46; color: #a1a1aa; }
     .entry-tag.mixed { background: #78350f; color: #fcd34d; }
 
+    /* Digest */
+    .digest-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: #a78bfa; }
+    .digest-mood { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; background: #3b1e5f; color: #c4b5fd; margin-bottom: 16px; }
+    .digest-narrative { font-size: 15px; line-height: 1.7; color: #cbd5e1; margin-bottom: 16px; white-space: pre-line; }
+    .digest-section { margin-bottom: 16px; }
+    .digest-section h3 { font-size: 14px; color: #94a3b8; margin-bottom: 8px; }
+    .digest-list { list-style: none; padding: 0; }
+    .digest-list li { padding: 6px 0; color: #cbd5e1; font-size: 14px; }
+    .digest-list li::before { content: "•"; color: #3b82f6; margin-right: 8px; }
+    .digest-reflection { padding: 16px; background: linear-gradient(135deg, #1e3a5f, #3b1e5f); border-radius: 12px; font-style: italic; color: #e2e8f0; }
+    .digest-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+    .digest-stat { padding: 8px 16px; background: #1e293b; border-radius: 8px; font-size: 13px; color: #94a3b8; }
+
     /* Status Bar */
     .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #1e293b; border-radius: 12px; margin-bottom: 24px; font-size: 14px; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block; margin-right: 8px; }
@@ -110,6 +123,7 @@
     <div class="tabs">
       <button class="tab-btn active" onclick="showTab('capture')">Capture</button>
       <button class="tab-btn" onclick="showTab('journal')">Journal</button>
+      <button class="tab-btn" onclick="showTab('digest')">Digest</button>
     </div>
 
     <div id="captureTab">
@@ -140,6 +154,22 @@
           <div class="empty-state">
             <div class="icon">🎙️</div>
             <p>No notes yet.<br>Record your first voice note!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="digestTab" style="display: none;">
+      <div class="card">
+        <h2><span>📊</span> Daily Digest</h2>
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; align-items: center;">
+          <input type="date" id="digestDate" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px;">
+          <button onclick="loadDigest()" style="padding: 8px 16px; border-radius: 8px; border: none; background: #2563eb; color: #fff; cursor: pointer;">Generate</button>
+        </div>
+        <div id="digestContent">
+          <div class="empty-state">
+            <div class="icon">📊</div>
+            <p>Select a date and click Generate<br>to create your daily digest.</p>
           </div>
         </div>
       </div>
@@ -177,7 +207,13 @@
       document.querySelector(`.tab-btn[onclick="showTab('${tab}')"]`).classList.add('active');
       document.getElementById('captureTab').style.display = tab === 'capture' ? 'block' : 'none';
       document.getElementById('journalTab').style.display = tab === 'journal' ? 'block' : 'none';
+      document.getElementById('digestTab').style.display = tab === 'digest' ? 'block' : 'none';
       if (tab === 'journal') loadEntries();
+      if (tab === 'digest') {
+        // Set default date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('digestDate').value = today;
+      }
     }
 
     // Record button
@@ -382,6 +418,72 @@
           btn.textContent = 'Analyze';
           btn.disabled = false;
         }
+      }
+    }
+
+    async function loadDigest() {
+      const dateStr = document.getElementById('digestDate').value;
+      if (!dateStr) {
+        alert('Please select a date');
+        return;
+      }
+
+      const content = document.getElementById('digestContent');
+      content.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Generating your daily digest...</p></div>';
+
+      try {
+        const res = await fetch(`/api/lifelog/digest/${dateStr}?ai=true`);
+        const data = await res.json();
+
+        if (data.totalEntries === 0) {
+          content.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No entries for this date.</p></div>';
+          return;
+        }
+
+        let html = `<div class="digest-stats">
+          <div class="digest-stat">📝 ${data.totalEntries} entries</div>
+          <div class="digest-stat">💬 ${data.topics?.length || 0} topics</div>
+          <div class="digest-stat">✅ ${data.actionItems?.length || 0} actions</div>
+        </div>`;
+
+        if (data.ai) {
+          html += `
+            <div class="digest-title">${data.ai.title}</div>
+            <span class="digest-mood">${data.ai.overallMood}</span>
+            <div class="digest-narrative">${data.ai.narrative}</div>
+          `;
+
+          if (data.ai.highlights?.length) {
+            html += `<div class="digest-section">
+              <h3>✨ Highlights</h3>
+              <ul class="digest-list">${data.ai.highlights.map(h => `<li>${h}</li>`).join('')}</ul>
+            </div>`;
+          }
+
+          if (data.ai.actionItems?.length) {
+            html += `<div class="digest-section">
+              <h3>📋 Action Items</h3>
+              <ul class="digest-list">${data.ai.actionItems.map(a => `<li>${a}</li>`).join('')}</ul>
+            </div>`;
+          }
+
+          if (data.ai.reflection) {
+            html += `<div class="digest-reflection">💭 ${data.ai.reflection}</div>`;
+          }
+        } else if (data.aiError) {
+          html += `<p style="color: #f59e0b;">AI digest unavailable: ${data.aiError}</p>`;
+          // Show basic stats
+          if (data.topics?.length) {
+            html += `<div class="digest-section"><h3>Topics</h3><div class="entry-meta">${data.topics.map(t => `<span class="entry-tag">${t}</span>`).join('')}</div></div>`;
+          }
+        } else {
+          html += '<p style="color: #94a3b8;">Set ANTHROPIC_API_KEY to enable AI-powered digests.</p>';
+        }
+
+        content.innerHTML = html;
+      } catch (e) {
+        console.error(e);
+        content.innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>Failed to load digest.</p></div>';
       }
     }
 

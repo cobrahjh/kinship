@@ -65,7 +65,7 @@ C:\kinship\
 | GET | `/api/lifelog/search?q=` | Search entries |
 | PATCH | `/api/lifelog/entries/:id` | Update entry |
 | DELETE | `/api/lifelog/entries/:id` | Delete entry |
-| GET | `/api/lifelog/digest/:date` | Get daily digest |
+| GET | `/api/lifelog/digest/:date` | Get daily digest (add ?ai=true for AI narrative) |
 
 ### System
 | Method | Endpoint | Description |
@@ -122,7 +122,8 @@ Features:
 - [x] Sentiment tracking
 
 ### Phase 3
-- [ ] Daily/weekly digests
+- [x] Daily digests (AI-generated narrative, highlights, reflection)
+- [ ] Weekly digests
 - [ ] Semantic search with embeddings
 - [ ] Pattern detection
 - [ ] Plugin system for exercise, etc.

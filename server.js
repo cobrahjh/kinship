@@ -61,6 +61,55 @@ Respond in JSON format only:
   return JSON.parse(jsonMatch[0]);
 }
 
+async function generateDailyDigest(dayEntries, dateStr) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error('ANTHROPIC_API_KEY not set');
+  }
+
+  // Build summary of entries for Claude
+  const entrySummaries = dayEntries.map((e, i) => {
+    const time = new Date(e.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const content = e.summary || e.transcript || '(no content)';
+    const mood = e.mood ? ` [${e.mood}]` : '';
+    return `${time}: ${content}${mood}`;
+  }).join('\n');
+
+  const allTopics = [...new Set(dayEntries.flatMap(e => e.topics || []))];
+  const allActions = dayEntries.flatMap(e => e.actionItems || []);
+  const sentiments = dayEntries.filter(e => e.sentiment).map(e => e.sentiment);
+
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 800,
+    messages: [{
+      role: 'user',
+      content: `Generate a daily digest for ${dateStr}. This is a personal voice journal.
+
+Entries from today:
+${entrySummaries}
+
+Topics mentioned: ${allTopics.join(', ') || 'none'}
+Sentiments: ${sentiments.join(', ') || 'none'}
+Action items found: ${allActions.join('; ') || 'none'}
+
+Create a warm, insightful daily digest. Respond in JSON format only:
+{
+  "title": "A brief title for the day (2-5 words)",
+  "narrative": "A 2-3 paragraph reflection on the day, written in second person (you), connecting themes and noting patterns",
+  "overallMood": "one word for overall mood",
+  "highlights": ["key moment 1", "key moment 2"],
+  "actionItems": ["consolidated action items"],
+  "reflection": "A brief encouraging thought or question for tomorrow"
+}`
+    }]
+  });
+
+  const text = response.content[0].text;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('Invalid digest response');
+  return JSON.parse(jsonMatch[0]);
+}
+
 // ============ LOGGING ============
 const logBuffer = [];
 const MAX_LOGS = 200;
@@ -310,7 +359,7 @@ app.delete('/api/lifelog/entries/:id', (req, res) => {
 // ============ STATS & DIGEST ============
 
 // Get daily digest
-app.get('/api/lifelog/digest/:date', (req, res) => {
+app.get('/api/lifelog/digest/:date', async (req, res) => {
   const dateStr = req.params.date;
   const dayEntries = entries.filter(e => e.timestamp.startsWith(dateStr));
 
@@ -319,12 +368,35 @@ app.get('/api/lifelog/digest/:date', (req, res) => {
     contexts[e.context] = (contexts[e.context] || 0) + 1;
   });
 
-  res.json({
+  const sentiments = {};
+  dayEntries.forEach(e => {
+    if (e.sentiment) sentiments[e.sentiment] = (sentiments[e.sentiment] || 0) + 1;
+  });
+
+  const basicDigest = {
     date: dateStr,
     totalEntries: dayEntries.length,
     contexts,
+    sentiments,
+    topics: [...new Set(dayEntries.flatMap(e => e.topics || []))],
+    actionItems: dayEntries.flatMap(e => e.actionItems || []),
     entries: dayEntries
-  });
+  };
+
+  // Generate AI digest if requested and Claude is available
+  if (req.query.ai === 'true' && process.env.ANTHROPIC_API_KEY && dayEntries.length > 0) {
+    try {
+      log(`Generating AI digest for ${dateStr}`);
+      const aiDigest = await generateDailyDigest(dayEntries, dateStr);
+      basicDigest.ai = aiDigest;
+      log(`AI digest generated for ${dateStr}: "${aiDigest.title}"`);
+    } catch (err) {
+      log(`AI digest failed for ${dateStr}: ${err.message}`, 'ERROR');
+      basicDigest.aiError = err.message;
+    }
+  }
+
+  res.json(basicDigest);
 });
 
 // ============ HEALTH, STATUS & LOGS ============
@@ -338,7 +410,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'kinship-lifelog',
-    version: '1.2.0',
+    version: '1.3.0',
     uptime: process.uptime(),
     entries: entries.length,
     whisperEnabled: !!process.env.OPENAI_API_KEY,
