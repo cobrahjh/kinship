@@ -91,6 +91,30 @@
     .nav-btn:active{opacity:0.7}
     .checkbox:active{transform:scale(0.9)}
     .preset-btn:active,.timer-preset:active{opacity:0.7}
+
+    /* Behavioral Features Styles */
+    .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+    .modal-content{background:#fff;border-radius:20px;padding:24px;max-width:350px;width:100%;text-align:center}
+    .modal-content h2{font-size:22px;margin-bottom:16px}
+    .energy-buttons{display:flex;gap:8px;justify-content:center;margin:20px 0}
+    .energy-btn{width:56px;height:56px;border-radius:50%;border:none;font-size:24px;cursor:pointer;transition:transform 0.2s}
+    .energy-btn:active{transform:scale(0.9)}
+    .energy-1{background:#fecaca}.energy-2{background:#fed7aa}.energy-3{background:#fef08a}.energy-4{background:#bbf7d0}.energy-5{background:#86efac}
+    .streak-warning{background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;border-radius:16px;padding:16px;margin-bottom:16px}
+    .streak-warning h3{margin-bottom:8px;font-size:18px}
+    .streak-warning-btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+    .streak-warning-btns button{flex:1;min-width:100px;padding:12px 16px;border-radius:10px;border:none;font-weight:600;cursor:pointer}
+    .btn-rest{background:rgba(255,255,255,0.3);color:#fff}
+    .btn-quick{background:#fff;color:#f59e0b}
+    .rest-card{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-radius:16px;padding:16px;margin-bottom:16px}
+    .insight-card{background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;margin-bottom:12px}
+    .insight-card h4{color:#1e40af;font-size:14px;margin-bottom:6px}
+    .insight-card p{color:#3b82f6;font-size:13px}
+    .suggestion-card{border-radius:16px;padding:16px;margin-bottom:16px}
+    .suggestion-low{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff}
+    .suggestion-mid{background:linear-gradient(135deg,#f59e0b,#eab308);color:#fff}
+    .suggestion-high{background:linear-gradient(135deg,#22c55e,#14b8a6);color:#fff}
+    .streak-display{display:flex;align-items:center;gap:8px;margin-top:12px;padding:8px 12px;background:rgba(255,255,255,0.2);border-radius:10px;font-size:14px}
   </style>
 </head>
 <body>
@@ -440,12 +464,91 @@ function formatTime(seconds) {
 function renderHome() {
   const completed = state.completedToday.length;
   const total = Object.values(exercises).reduce((sum, c) => sum + c.exercises.length, 0);
-  return `
+  const streakAtRisk = typeof isStreakAtRisk === 'function' && isStreakAtRisk();
+  const restToday = typeof isRestDayToday === 'function' && isRestDayToday();
+  const suggestion = typeof getEnergyBasedSuggestion === 'function' ? getEnergyBasedSuggestion() : null;
+  const bestTime = typeof getBestExerciseTime === 'function' ? getBestExerciseTime() : null;
+  const moodData = typeof getMoodCorrelation === 'function' ? getMoodCorrelation() : null;
+
+  let html = '';
+
+  // Energy check modal
+  if (state.showEnergyCheck) {
+    html += `
+      <div class="modal-overlay" onclick="hideEnergyCheck()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+          <h2>How's your energy?</h2>
+          <p class="text-gray">This helps us suggest the right exercises</p>
+          <div class="energy-buttons">
+            <button class="energy-btn energy-1" onclick="setEnergy(1)">1</button>
+            <button class="energy-btn energy-2" onclick="setEnergy(2)">2</button>
+            <button class="energy-btn energy-3" onclick="setEnergy(3)">3</button>
+            <button class="energy-btn energy-4" onclick="setEnergy(4)">4</button>
+            <button class="energy-btn energy-5" onclick="setEnergy(5)">5</button>
+          </div>
+          <p class="text-sm text-gray">1 = Very low, 5 = Great</p>
+        </div>
+      </div>
+    `;
+  }
+
+  // Streak warning
+  if (streakAtRisk && !restToday) {
+    html += `
+      <div class="streak-warning">
+        <h3>Your ${state.stats?.streaks?.current || 0}-day streak is at risk!</h3>
+        <p class="text-sm">Don't lose your progress. Choose an option:</p>
+        <div class="streak-warning-btns">
+          <button class="btn-rest" onclick="takeRestDay()">Rest Day</button>
+          <button class="btn-quick" onclick="doQuickExercise()">Quick 5-min</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // Rest day confirmation
+  if (restToday) {
+    html += `
+      <div class="rest-card">
+        <h3>Rest Day</h3>
+        <p class="text-sm" style="opacity:0.9">Recovery is part of progress. Your streak is safe!</p>
+      </div>
+    `;
+  }
+
+  // Energy-based suggestion
+  if (suggestion && !restToday) {
+    const suggestionClass = state.energyLevel <= 2 ? 'suggestion-low' : state.energyLevel <= 3 ? 'suggestion-mid' : 'suggestion-high';
+    html += `
+      <div class="suggestion-card ${suggestionClass}">
+        <h3>${suggestion.icon} ${suggestion.title}</h3>
+        <p class="text-sm" style="opacity:0.9;margin-top:4px">${suggestion.message}</p>
+        <button class="btn btn-gray" style="margin-top:12px;background:rgba(255,255,255,0.3);color:#fff" onclick="selectCategory('${suggestion.suggested}');switchTab('exercises')">
+          Start ${exercises[suggestion.suggested]?.title || 'Exercises'}
+        </button>
+      </div>
+    `;
+  }
+
+  html += `
     <div class="card-gradient">
       <h1>MS Exercise Companion</h1>
       <p class="text-sm" style="opacity:.9;margin-top:8px">Neuroplasticity-based movement</p>
       <div class="stat-box"><span class="stat-number">${completed}/${total}</span><br><span class="text-sm">Done Today</span></div>
+      ${state.stats?.streaks ? `<div class="streak-display">🔥 ${state.stats.streaks.current} day streak (best: ${state.stats.streaks.longest})</div>` : ''}
     </div>
+  `;
+
+  // Energy check button
+  if (!state.energyLevel && !restToday) {
+    html += `
+      <button class="btn btn-blue" style="margin-bottom:16px" onclick="showEnergyCheck()">
+        How's your energy today?
+      </button>
+    `;
+  }
+
+  html += `
     <div class="card">
       <h3>Session Timer</h3>
       <div class="timer-display">${String(state.timerMinutes).padStart(2,'0')}:${String(state.timerSeconds).padStart(2,'0')}</div>
@@ -462,8 +565,34 @@ function renderHome() {
         <button class="preset-btn" onclick="resetTimer(60)">60m</button>
       </div>
     </div>
-    <div class="tip-box"><h3>💡 Today's Tip</h3><p>Quality over quantity! Focus on form.</p></div>
   `;
+
+  // Insights section
+  if (bestTime || moodData) {
+    html += `<h3 style="margin:16px 0 12px">Insights</h3>`;
+
+    if (bestTime) {
+      html += `
+        <div class="insight-card">
+          <h4>Best Exercise Time</h4>
+          <p>You perform best in the ${bestTime.period} (around ${bestTime.timeStr}) with avg energy ${bestTime.avgEnergy}/5</p>
+        </div>
+      `;
+    }
+
+    if (moodData) {
+      html += `
+        <div class="insight-card">
+          <h4>Mood Correlation</h4>
+          <p>Exercise days show ${moodData.moodBoost}% better mood. ${moodData.bestMoodExercise} has the biggest impact!</p>
+        </div>
+      `;
+    }
+  }
+
+  html += `<div class="tip-box"><h3>💡 Today's Tip</h3><p>Quality over quantity! Focus on form.</p></div>`;
+
+  return html;
 }
 
 function renderExercises() {
@@ -646,5 +775,8 @@ render();
 fetchStats();
 fetchHistory();
 </script>
+<script src="behavior.js"></script>
+</body>
+</html>
 </body>
 </html>
