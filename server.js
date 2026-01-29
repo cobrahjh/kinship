@@ -9,7 +9,7 @@ const app = express();
 const PORT = 8766;
 
 // ============ OPENAI / WHISPER ============
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
 async function transcribeAudio(audioPath) {
   if (!process.env.OPENAI_API_KEY) {
@@ -52,7 +52,7 @@ function cosineSimilarity(a, b) {
 }
 
 // ============ ANTHROPIC / CLAUDE ANALYSIS ============
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }) : null;
 
 async function analyzeTranscript(transcript, context = 'auto') {
   if (!process.env.ANTHROPIC_API_KEY) {
