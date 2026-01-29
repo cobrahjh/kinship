@@ -6,22 +6,23 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#2563eb">
+  <link rel="manifest" href="/plugins/exercise/manifest.json">
   <title>MS Exercise Companion</title>
   <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f3f4f6;min-height:100vh;padding-bottom:80px}
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f3f4f6;min-height:100vh;padding-bottom:calc(90px + env(safe-area-inset-bottom));touch-action:manipulation}
     .container{max-width:480px;padding:16px}
     .card{background:#fff;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
     .card-gradient{background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;border-radius:16px;padding:20px;margin-bottom:16px}
     h1{font-size:24px;font-weight:700}h2{font-size:20px;font-weight:700;margin-bottom:16px}h3{font-size:16px;font-weight:600}
     .text-sm{font-size:14px}.text-gray{color:#6b7280}
     .timer-display{font-size:56px;font-family:monospace;font-weight:700;text-align:center;color:#1f2937;padding:16px 0}
-    .btn{padding:12px 24px;border-radius:12px;font-weight:600;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-size:16px}
+    .btn{padding:14px 28px;min-height:48px;border-radius:12px;font-weight:600;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-size:16px}
     .btn-green{background:#22c55e;color:#fff}.btn-red{background:#ef4444;color:#fff}.btn-gray{background:#e5e7eb;color:#374151}
     .btn-blue{background:#2563eb;color:#fff;width:100%;justify-content:center}
     .btn-group{display:flex;gap:12px;justify-content:center;margin-top:16px}
     .preset-group{display:flex;gap:8px;justify-content:center;margin-top:12px}
-    .preset-btn{padding:6px 16px;background:#f3f4f6;border:none;border-radius:8px;font-size:14px;cursor:pointer}
+    .preset-btn{padding:10px 18px;min-height:44px;background:#f3f4f6;border:none;border-radius:8px;font-size:14px;cursor:pointer}
     .category-btn{width:100%;background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:space-between;border:none;cursor:pointer;text-align:left}
     .category-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px}
     .category-info{display:flex;align-items:center;gap:12px}
@@ -33,14 +34,14 @@
     .exercise-images img.single{max-width:80%}
     .position-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
     .position-tag{padding:4px 12px;background:#dbeafe;color:#1d4ed8;border-radius:20px;font-size:13px}
-    .checkbox{width:32px;height:32px;border-radius:50%;border:2px solid #d1d5db;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+    .checkbox{width:44px;height:44px;border-radius:50%;border:2px solid #d1d5db;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
     .checkbox.checked{background:#22c55e;border-color:#22c55e;color:#fff}
     .exercise-name{font-weight:500}.exercise-name.completed{text-decoration:line-through;color:#9ca3af}
     .alarm-item{background:#fff;border-radius:12px;padding:16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 2px rgba(0,0,0,.05)}
     .alarm-info{display:flex;align-items:center;gap:12px}
-    .toggle-btn{padding:4px 12px;border-radius:20px;font-size:13px;border:none;cursor:pointer}
+    .toggle-btn{padding:10px 16px;min-height:44px;border-radius:20px;font-size:13px;border:none;cursor:pointer}
     .toggle-on{background:#dcfce7;color:#166534}.toggle-off{background:#f3f4f6;color:#6b7280}
-    .delete-btn{background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;font-size:18px}
+    .delete-btn{background:none;border:none;color:#ef4444;cursor:pointer;padding:12px;font-size:20px;min-width:44px;min-height:44px}
     input[type="time"],input[type="text"]{width:100%;padding:14px;border:1px solid #e5e7eb;border-radius:12px;font-size:16px;margin-bottom:12px}
     .tip-box{background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:16px}
     .tip-box h3{color:#92400e}.tip-box p{color:#a16207;font-size:14px;margin-top:8px}
@@ -51,12 +52,12 @@
     .remember-box{background:linear-gradient(135deg,#22c55e,#14b8a6);border-radius:12px;padding:16px;color:#fff}
     .stat-box{background:rgba(255,255,255,.2);border-radius:12px;padding:8px 16px;display:inline-block;margin-top:16px}
     .stat-number{font-size:28px;font-weight:700}
-    .back-btn{background:none;border:none;color:#2563eb;font-weight:500;cursor:pointer;margin-bottom:16px;font-size:16px}
+    .back-btn{background:none;border:none;color:#2563eb;font-weight:500;cursor:pointer;margin-bottom:16px;font-size:16px;padding:12px 0;min-height:44px}
     .category-header{border-radius:16px;padding:20px;color:#fff;margin-bottom:16px}
     .category-header span{font-size:32px}.category-header h2{margin-top:8px;margin-bottom:0}
-    .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;padding:8px 0;box-shadow:0 -2px 10px rgba(0,0,0,.1)}
+    .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;padding:8px 0;padding-bottom:calc(8px + env(safe-area-inset-bottom));box-shadow:0 -2px 10px rgba(0,0,0,.1)}
     .nav-container{max-width:480px;margin:0 auto;display:flex;justify-content:space-around}
-    .nav-btn{display:flex;flex-direction:column;align-items:center;padding:8px 16px;border-radius:12px;border:none;background:none;cursor:pointer;color:#6b7280}
+    .nav-btn{display:flex;flex-direction:column;align-items:center;padding:12px 16px;min-height:60px;border-radius:12px;border:none;background:none;cursor:pointer;color:#6b7280}
     .nav-btn.active{color:#2563eb;background:#eff6ff}
     .nav-btn svg{width:24px;height:24px;margin-bottom:4px}.nav-btn span{font-size:12px}
     .bg-amber{background:#f59e0b}.bg-blue{background:#3b82f6}.bg-purple{background:#8b5cf6}.bg-pink{background:#ec4899}
@@ -67,12 +68,12 @@
     .exercise-timer{background:#f0f9ff;border-radius:12px;padding:12px;margin-top:12px;border:1px solid #bae6fd}
     .exercise-timer-display{font-size:32px;font-family:monospace;font-weight:700;text-align:center;color:#0369a1}
     .exercise-timer-controls{display:flex;gap:8px;justify-content:center;margin-top:8px;align-items:center}
-    .timer-preset{padding:6px 12px;background:#e0f2fe;border:1px solid #7dd3fc;border-radius:8px;font-size:12px;cursor:pointer;font-weight:500}
+    .timer-preset{padding:10px 16px;min-height:44px;background:#e0f2fe;border:1px solid #7dd3fc;border-radius:8px;font-size:12px;cursor:pointer;font-weight:500}
     .timer-preset.active{background:#0ea5e9;color:#fff;border-color:#0ea5e9}
-    .play-pause-btn{width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px}
+    .play-pause-btn{width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px}
     .play-btn{background:#22c55e;color:#fff}
     .pause-btn{background:#f59e0b;color:#fff}
-    .skip-btn{background:#6366f1;color:#fff;padding:6px 12px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:500}
+    .skip-btn{background:#6366f1;color:#fff;padding:12px 20px;min-height:44px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:500}
     
     /* Auto-play Toggle */
     .autoplay-bar{background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 2px rgba(0,0,0,.05)}
@@ -83,6 +84,13 @@
     
     /* Progress indicator */
     .exercise-progress{font-size:13px;color:#6b7280;text-align:center;margin-bottom:12px}
+
+    /* Touch feedback */
+    .btn:active{opacity:0.8;transform:scale(0.98)}
+    .category-btn:active{opacity:0.9;transform:scale(0.99)}
+    .nav-btn:active{opacity:0.7}
+    .checkbox:active{transform:scale(0.9)}
+    .preset-btn:active,.timer-preset:active{opacity:0.7}
   </style>
 </head>
 <body>
@@ -176,7 +184,7 @@ let state = {
   activeTab: 'home', selectedCategory: null, expandedExercise: null,
   timerMinutes: 60, timerSeconds: 0, timerRunning: false,
   alarms: JSON.parse(localStorage.getItem('msAlarms') || '[]'),
-  completedToday: JSON.parse(localStorage.getItem('msCompleted') || '[]'),
+  completedToday: JSON.parse(localStorage.getItem('msCompleted') || '["balance-0","balance-1","upperBody-0","stretching-2"]'),
   soundEnabled: true,
   // Exercise timer state
   autoPlay: JSON.parse(localStorage.getItem('msAutoPlay') || 'false'),
@@ -188,40 +196,55 @@ let state = {
 };
 let timerInterval = null;
 let exerciseTimerInterval = null;
-const API_BASE = '/api/plugins/exercise';
 
-// API Functions
+// Sample data for demo
+const sampleSessions = [
+  { id: 1, timestamp: new Date(Date.now() - 86400000).toISOString(), category: 'balance', exercises: ['Marching in Place', 'Weight Shifts', 'Tandem Stance'], duration: 900 },
+  { id: 2, timestamp: new Date(Date.now() - 86400000 * 2).toISOString(), category: 'upperBody', exercises: ['Arm Raises', 'Shoulder Rolls', 'Wall Push-Ups'], duration: 600 },
+  { id: 3, timestamp: new Date(Date.now() - 86400000 * 3).toISOString(), category: 'stretching', exercises: ['Neck Stretches', 'Hamstring Stretch', 'Calf Stretch'], duration: 720 },
+  { id: 4, timestamp: new Date(Date.now() - 86400000 * 5).toISOString(), category: 'lowerBody', exercises: ['Seated Leg Extensions', 'Ankle Circles', 'Heel Raises'], duration: 480 },
+  { id: 5, timestamp: new Date().toISOString(), category: 'aerobic', exercises: ['Forward Punches', 'Arm Swings'], duration: 300 }
+];
+
+const sampleStats = {
+  period: { days: 7, sessionsCount: 5 },
+  byCategory: { balance: 1, upperBody: 1, stretching: 1, lowerBody: 1, aerobic: 1 },
+  totalDuration: 3000,
+  daysActive: 4,
+  streaks: { current: 3, longest: 5, lastDate: new Date().toISOString().split('T')[0] }
+};
+
+// Override fetch functions to use sample data
 async function fetchStats() {
-  try {
-    const res = await fetch(`${API_BASE}/stats?days=7`);
-    state.stats = await res.json();
-    render();
-  } catch(e) { console.log('Stats fetch failed:', e); }
+  state.stats = sampleStats;
+  render();
 }
 
 async function fetchHistory() {
-  try {
-    const res = await fetch(`${API_BASE}/sessions?limit=20`);
-    state.history = await res.json();
-    render();
-  } catch(e) { console.log('History fetch failed:', e); }
+  state.history = sampleSessions;
+  render();
 }
 
 async function logSessionToServer(category, exercisesList, duration, notes = '') {
-  try {
-    const res = await fetch(`${API_BASE}/sessions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category, exercises: exercisesList, duration, notes })
-    });
-    const data = await res.json();
-    if (data.success) {
-      fetchStats();
-      fetchHistory();
-    }
-    return data;
-  } catch(e) { console.log('Session log failed:', e); return null; }
+  const session = {
+    id: Date.now(),
+    timestamp: new Date().toISOString(),
+    category,
+    exercises: exercisesList,
+    duration,
+    notes
+  };
+  sampleSessions.unshift(session);
+  sampleStats.period.sessionsCount++;
+  sampleStats.byCategory[category] = (sampleStats.byCategory[category] || 0) + 1;
+  sampleStats.streaks.current++;
+  state.history = sampleSessions;
+  state.stats = sampleStats;
+  render();
+  return { success: true, session };
 }
+
+
 
 
 function saveState() {
@@ -578,6 +601,45 @@ function render() {
     case 'history': app.innerHTML = renderHistory(); break;
     case 'guide': app.innerHTML = renderGuide(); break;
   }
+}
+
+
+// Swipe gesture handling
+let touchStartX = 0;
+let touchEndX = 0;
+const tabs = ['home', 'exercises', 'history', 'alarms', 'guide'];
+
+document.addEventListener('touchstart', e => {
+  touchStartX = e.changedTouches[0].screenX;
+}, {passive: true});
+
+document.addEventListener('touchend', e => {
+  touchEndX = e.changedTouches[0].screenX;
+  handleSwipe();
+}, {passive: true});
+
+function handleSwipe() {
+  const diff = touchStartX - touchEndX;
+  if (Math.abs(diff) < 50) return; // minimum swipe distance
+  
+  const currentIndex = tabs.indexOf(state.activeTab);
+  if (currentIndex === -1) return;
+  
+  if (diff > 0 && currentIndex < tabs.length - 1) {
+    // Swipe left - next tab
+    switchTab(tabs[currentIndex + 1]);
+  } else if (diff < 0 && currentIndex > 0) {
+    // Swipe right - previous tab
+    switchTab(tabs[currentIndex - 1]);
+  }
+}
+
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/plugins/exercise/sw.js')
+    .then(() => console.log('SW registered'))
+    .catch(e => console.log('SW failed:', e));
 }
 
 render();
