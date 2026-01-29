@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const serveIndex = require('serve-index');
 const OpenAI = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
 const { loadPlugins, getPluginRegistry, callHook } = require('./plugins/loader');
@@ -961,6 +962,9 @@ async function initializePlugins() {
   };
 
   const plugins = await loadPlugins('./plugins', context);
+
+  // Enable directory listing for plugins folder
+  app.use('/plugins', express.static(path.join(__dirname, 'plugins')), serveIndex(path.join(__dirname, 'plugins'), { icons: true }));
 
   plugins.forEach(plugin => {
     // Mount API routes at /api/plugins/[plugin-name]
