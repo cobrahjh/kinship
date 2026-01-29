@@ -11,7 +11,7 @@ const app = express();
 const PORT = 8766;
 
 // ============ OPENAI / WHISPER ============
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+let openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
 async function transcribeAudio(audioPath) {
   if (!process.env.OPENAI_API_KEY) {
@@ -54,7 +54,7 @@ function cosineSimilarity(a, b) {
 }
 
 // ============ ANTHROPIC / CLAUDE ANALYSIS ============
-const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }) : null;
+let anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }) : null;
 
 async function analyzeTranscript(transcript, context = 'auto') {
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -727,6 +727,133 @@ app.delete('/api/lifelog/entries/:id', (req, res) => {
   res.json({ success: true });
 });
 
+// ============ BEHAVIORAL FEATURES ============
+
+// Quick mood capture (no audio required)
+app.post('/api/lifelog/mood', (req, res) => {
+  try {
+    const { mood, sentimentScore, note, context } = req.body;
+
+    if (!mood || sentimentScore === undefined) {
+      return res.status(400).json({ success: false, error: 'Mood and sentimentScore required' });
+    }
+
+    const entry = {
+      id: Date.now(),
+      timestamp: new Date().toISOString(),
+      device: 'web',
+      context: context || 'personal',
+      audioPath: null,
+      transcript: note || null,
+      summary: `Quick mood check: ${mood}`,
+      sentiment: sentimentScore >= 0.6 ? 'positive' : sentimentScore >= 0.4 ? 'neutral' : 'negative',
+      sentimentScore: parseFloat(sentimentScore),
+      mood: mood,
+      entryType: 'mood',
+      processed: true,
+      createdAt: new Date().toISOString()
+    };
+
+    entries.push(entry);
+    saveEntries();
+    log(`Quick mood entry: ${mood} (${sentimentScore})`);
+
+    // Call plugin hooks
+    callHook('onEntryCreated', entry).catch(err => {
+      log(`Hook onEntryCreated error: ${err.message}`, 'ERROR');
+    });
+
+    res.json({ success: true, entryId: entry.id, entry });
+  } catch (err) {
+    log(`Mood capture error: ${err.message}`, 'ERROR');
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Get streak and weekly progress data
+app.get('/api/lifelog/streak', (req, res) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Get start of current week (Sunday)
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+
+  // Get days with entries this week
+  const weekDays = [];
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(startOfWeek);
+    day.setDate(startOfWeek.getDate() + i);
+    const dayStr = day.toISOString().split('T')[0];
+    const hasEntry = entries.some(e => e.timestamp.startsWith(dayStr));
+    weekDays.push({
+      date: dayStr,
+      dayName: day.toLocaleDateString('en-US', { weekday: 'short' }),
+      hasEntry,
+      isToday: day.toDateString() === today.toDateString(),
+      isFuture: day > today
+    });
+  }
+
+  const daysWithEntries = weekDays.filter(d => d.hasEntry).length;
+
+  // Calculate current streak
+  let streak = 0;
+  let checkDate = new Date(today);
+
+  // Check if today has entry
+  const todayStr = today.toISOString().split('T')[0];
+  const hasTodayEntry = entries.some(e => e.timestamp.startsWith(todayStr));
+
+  if (!hasTodayEntry) {
+    // If no entry today, start checking from yesterday
+    checkDate.setDate(checkDate.getDate() - 1);
+  }
+
+  while (true) {
+    const dateStr = checkDate.toISOString().split('T')[0];
+    const hasEntry = entries.some(e => e.timestamp.startsWith(dateStr));
+    if (hasEntry) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  // Calculate longest streak
+  let longestStreak = 0;
+  let currentRun = 0;
+  const uniqueDays = [...new Set(entries.map(e => e.timestamp.split('T')[0]))].sort();
+
+  for (let i = 0; i < uniqueDays.length; i++) {
+    if (i === 0) {
+      currentRun = 1;
+    } else {
+      const prev = new Date(uniqueDays[i - 1]);
+      const curr = new Date(uniqueDays[i]);
+      const diff = (curr - prev) / (1000 * 60 * 60 * 24);
+      if (diff === 1) {
+        currentRun++;
+      } else {
+        longestStreak = Math.max(longestStreak, currentRun);
+        currentRun = 1;
+      }
+    }
+  }
+  longestStreak = Math.max(longestStreak, currentRun);
+
+  res.json({
+    weekDays,
+    daysWithEntries,
+    daysRemaining: 7 - daysWithEntries,
+    currentStreak: streak,
+    longestStreak,
+    hasTodayEntry,
+    weekProgress: Math.round((daysWithEntries / 7) * 100)
+  });
+});
+
 // ============ STATS & DIGEST ============
 
 // Get daily digest
@@ -897,6 +1024,44 @@ app.get('/api/lifelog/patterns', async (req, res) => {
   } catch (err) {
     log('Pattern detection failed: ' + err.message, 'ERROR');
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ============ CONFIG ENDPOINTS ============
+
+// Set OpenAI API key at runtime
+app.post('/api/config/openai-key', (req, res) => {
+  const { key } = req.body;
+  if (!key || typeof key !== 'string') {
+    return res.status(400).json({ success: false, error: 'Invalid key' });
+  }
+
+  try {
+    process.env.OPENAI_API_KEY = key;
+    openai = new OpenAI({ apiKey: key });
+    log('OpenAI API key configured at runtime');
+    res.json({ success: true });
+  } catch (err) {
+    log(`Failed to configure OpenAI: ${err.message}`, 'ERROR');
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Set Anthropic API key at runtime
+app.post('/api/config/anthropic-key', (req, res) => {
+  const { key } = req.body;
+  if (!key || typeof key !== 'string') {
+    return res.status(400).json({ success: false, error: 'Invalid key' });
+  }
+
+  try {
+    process.env.ANTHROPIC_API_KEY = key;
+    anthropic = new Anthropic({ apiKey: key });
+    log('Anthropic API key configured at runtime');
+    res.json({ success: true });
+  } catch (err) {
+    log(`Failed to configure Anthropic: ${err.message}`, 'ERROR');
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

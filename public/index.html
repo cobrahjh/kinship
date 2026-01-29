@@ -100,11 +100,70 @@
     @media (max-width: 600px) {
       .stats-grid { grid-template-columns: 1fr; }
     }
+
+    /* ============ BEHAVIORAL FEATURES ============ */
+
+    /* Progress Visualization */
+    .progress-card { background: #1e293b; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+    .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .progress-header h3 { font-size: 16px; font-weight: 600; }
+    .streak-badge { display: flex; align-items: center; gap: 4px; padding: 4px 12px; background: #7c3aed; border-radius: 12px; font-size: 13px; }
+    .week-days { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .day-indicator { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .day-indicator .day-name { font-size: 11px; color: #64748b; text-transform: uppercase; }
+    .day-indicator .day-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.2s; }
+    .day-dot.empty { background: #334155; border: 2px dashed #475569; }
+    .day-dot.filled { background: #22c55e; color: #fff; }
+    .day-dot.today { box-shadow: 0 0 0 2px #2563eb; }
+    .day-dot.future { background: #1e293b; border: 2px solid #334155; opacity: 0.5; }
+    .progress-bar-container { background: #334155; border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 8px; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #2563eb, #7c3aed); transition: width 0.3s ease; }
+    .progress-message { font-size: 13px; color: #94a3b8; text-align: center; }
+
+    /* One-Tap Mood */
+    .mood-section { margin-top: 24px; padding-top: 24px; border-top: 1px solid #334155; }
+    .mood-label { color: #94a3b8; font-size: 14px; margin-bottom: 12px; text-align: center; }
+    .mood-buttons { display: flex; justify-content: center; gap: 12px; }
+    .mood-btn { width: 56px; height: 56px; border-radius: 50%; border: 2px solid #334155; background: #1e293b; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+    .mood-btn:hover { border-color: #2563eb; transform: scale(1.1); }
+    .mood-btn.selected { transform: scale(1.1); }
+    .mood-btn[data-score="0.1"]:hover, .mood-btn[data-score="0.1"].selected { background: #7f1d1d; border-color: #dc2626; }
+    .mood-btn[data-score="0.3"]:hover, .mood-btn[data-score="0.3"].selected { background: #78350f; border-color: #f59e0b; }
+    .mood-btn[data-score="0.5"]:hover, .mood-btn[data-score="0.5"].selected { background: #3f3f46; border-color: #a1a1aa; }
+    .mood-btn[data-score="0.7"]:hover, .mood-btn[data-score="0.7"].selected { background: #14532d; border-color: #22c55e; }
+    .mood-btn[data-score="0.9"]:hover, .mood-btn[data-score="0.9"].selected { background: #166534; border-color: #4ade80; }
+    .mood-emoji { font-size: 28px; }
+    .mood-note-section { margin-top: 16px; }
+    .mood-note-input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px; min-height: 60px; resize: none; font-family: inherit; }
+    .mood-note-input:focus { outline: none; border-color: #2563eb; }
+    .mood-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .mood-actions button { flex: 1; padding: 10px; border-radius: 10px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .mood-cancel { border: 1px solid #334155; background: transparent; color: #94a3b8; }
+    .mood-save { border: none; background: #2563eb; color: #fff; }
+    .mood-status { margin-top: 12px; color: #64748b; font-size: 13px; text-align: center; }
+
+    /* Fresh Start Modal */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.9); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+    .modal-content { background: #1e293b; border-radius: 20px; padding: 24px; max-width: 350px; width: 100%; text-align: center; animation: modalIn 0.3s ease; }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    .modal-emoji { font-size: 48px; margin-bottom: 12px; }
+    .modal-title { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+    .modal-message { color: #94a3b8; margin-bottom: 20px; font-size: 15px; }
+    .intention-input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 15px; min-height: 80px; resize: none; font-family: inherit; margin-bottom: 16px; }
+    .intention-input:focus { outline: none; border-color: #2563eb; }
+    .modal-actions { display: flex; gap: 8px; }
+    .modal-actions button { flex: 1; padding: 12px; border-radius: 12px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .modal-dismiss { border: 1px solid #334155; background: transparent; color: #94a3b8; }
+    .modal-confirm { border: none; background: #2563eb; color: #fff; }
+
+    /* Settings Button */
+    #settingsBtn:hover { background: rgba(255,255,255,0.3); transform: rotate(45deg); }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
+    <div class="header" style="position: relative;">
+      <button id="settingsBtn" onclick="openSettings()" style="position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 20px; transition: all 0.2s;" title="Settings">⚙️</button>
       <h1>Kinship</h1>
       <p>Your AI Memory Companion</p>
     </div>
@@ -139,6 +198,25 @@
     </div>
 
     <div id="captureTab">
+      <!-- Progress Visualization -->
+      <div class="progress-card" id="progressCard">
+        <div class="progress-header">
+          <h3>This Week</h3>
+          <div class="streak-badge">
+            <span>🔥</span>
+            <span id="progressStreak">0</span>
+            <span>day streak</span>
+          </div>
+        </div>
+        <div class="week-days" id="weekDays">
+          <!-- Populated by JS -->
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="weekProgressBar" style="width: 0%;"></div>
+        </div>
+        <p class="progress-message" id="progressMessage">Loading...</p>
+      </div>
+
       <div class="card">
         <h2><span>🎙️</span> Voice Capture</h2>
         <p style="color: #94a3b8; margin-bottom: 20px;">Tap and hold to record. Release to save.</p>
@@ -155,6 +233,36 @@
             <button class="ctx-btn" data-ctx="work">💼 Work</button>
           </div>
           <p id="recordStatus" style="margin-top: 20px; color: #64748b;">Ready to capture your thoughts</p>
+        </div>
+
+        <!-- One-Tap Mood -->
+        <div class="mood-section">
+          <p class="mood-label">Or quickly log how you're feeling</p>
+          <div class="mood-buttons" id="moodButtons">
+            <button class="mood-btn" data-mood="😔" data-score="0.1" onclick="selectMood(this)">
+              <span class="mood-emoji">😔</span>
+            </button>
+            <button class="mood-btn" data-mood="😕" data-score="0.3" onclick="selectMood(this)">
+              <span class="mood-emoji">😕</span>
+            </button>
+            <button class="mood-btn" data-mood="😐" data-score="0.5" onclick="selectMood(this)">
+              <span class="mood-emoji">😐</span>
+            </button>
+            <button class="mood-btn" data-mood="🙂" data-score="0.7" onclick="selectMood(this)">
+              <span class="mood-emoji">🙂</span>
+            </button>
+            <button class="mood-btn" data-mood="😊" data-score="0.9" onclick="selectMood(this)">
+              <span class="mood-emoji">😊</span>
+            </button>
+          </div>
+          <div class="mood-note-section" id="moodNoteSection" style="display: none;">
+            <textarea class="mood-note-input" id="moodNote" placeholder="Add a quick note (optional)..."></textarea>
+            <div class="mood-actions">
+              <button class="mood-cancel" onclick="cancelMood()">Cancel</button>
+              <button class="mood-save" onclick="saveMood()">Save Mood</button>
+            </div>
+          </div>
+          <p class="mood-status" id="moodStatus"></p>
         </div>
       </div>
     </div>
@@ -235,6 +343,77 @@
 
     <!-- Plugin Tabs Container -->
     <div id="pluginTabsContainer"></div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px; text-align: left;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="font-size: 20px;">⚙️ Settings</h2>
+        <button onclick="closeSettings()" style="background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer;">&times;</button>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h3 style="font-size: 14px; color: #94a3b8; margin-bottom: 12px;">API Keys</h3>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="background: #0f172a; border-radius: 8px; padding: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span>OpenAI (Whisper + Embeddings)</span>
+              <span id="settingsWhisper" style="color: #64748b;">Checking...</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <input type="password" id="openaiKeyInput" placeholder="sk-..." style="flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #f8fafc; font-size: 13px;">
+              <button onclick="saveOpenAIKey()" style="padding: 8px 16px; background: #2563eb; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 13px;">Save</button>
+            </div>
+          </div>
+          <div style="background: #0f172a; border-radius: 8px; padding: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span>Anthropic (Claude Analysis)</span>
+              <span id="settingsClaude" style="color: #64748b;">Checking...</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <input type="password" id="anthropicKeyInput" placeholder="sk-ant-..." style="flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #f8fafc; font-size: 13px;">
+              <button onclick="saveAnthropicKey()" style="padding: 8px 16px; background: #7c3aed; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 13px;">Save</button>
+            </div>
+          </div>
+          <p style="font-size: 11px; color: #64748b;">Keys are stored in memory only. Set environment variables for persistence.</p>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h3 style="font-size: 14px; color: #94a3b8; margin-bottom: 12px;">Data</h3>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; padding: 12px; background: #0f172a; border-radius: 8px;">
+            <span>Total Entries</span>
+            <span id="settingsTotal" style="color: #3b82f6;">0</span>
+          </div>
+          <button onclick="embedAll()" style="padding: 12px; background: #1e3a5f; border: none; border-radius: 8px; color: #93c5fd; cursor: pointer; font-size: 14px;">Generate Embeddings for All Entries</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h3 style="font-size: 14px; color: #94a3b8; margin-bottom: 12px;">Fresh Start Prompts</h3>
+        <button onclick="resetFreshStart()" style="padding: 12px; width: 100%; background: #334155; border: none; border-radius: 8px; color: #f8fafc; cursor: pointer; font-size: 14px;">Reset Fresh Start (show again)</button>
+      </div>
+
+      <div style="border-top: 1px solid #334155; padding-top: 16px; text-align: center; color: #64748b; font-size: 12px;">
+        Kinship v1.5.0 • Your data stays local
+      </div>
+    </div>
+  </div>
+
+  <!-- Fresh Start Modal -->
+  <div class="modal-overlay" id="freshStartModal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-emoji" id="freshStartEmoji">🌅</div>
+      <h2 class="modal-title" id="freshStartTitle">Fresh Week!</h2>
+      <p class="modal-message" id="freshStartMessage">A new week begins. Would you like to set an intention?</p>
+      <textarea class="intention-input" id="intentionInput" placeholder="My intention is..."></textarea>
+      <div class="modal-actions">
+        <button class="modal-dismiss" onclick="dismissFreshStart()">Not Now</button>
+        <button class="modal-confirm" onclick="saveIntention()">Set Intention</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -807,9 +986,397 @@
       }
     }
 
+    // ============ BEHAVIORAL FEATURES ============
+
+    // Fresh Start localStorage keys
+    const FRESH_START_DISMISSED = 'kinship_freshStart_dismissed';
+
+    // Progress Data
+    let progressData = null;
+
+    // Load weekly progress
+    async function loadProgress() {
+      try {
+        const data = await fetch('/api/lifelog/streak').then(r => r.json());
+        progressData = data;
+        renderProgress();
+      } catch (e) {
+        console.error('Failed to load progress:', e);
+      }
+    }
+
+    function renderProgress() {
+      if (!progressData) return;
+
+      const { weekDays, daysWithEntries, currentStreak, weekProgress, hasTodayEntry } = progressData;
+
+      // Update streak badge
+      document.getElementById('progressStreak').textContent = currentStreak;
+
+      // Render day indicators
+      const weekDaysEl = document.getElementById('weekDays');
+      weekDaysEl.innerHTML = weekDays.map(day => {
+        let dotClass = 'day-dot';
+        let content = '';
+
+        if (day.isFuture) {
+          dotClass += ' future';
+        } else if (day.hasEntry) {
+          dotClass += ' filled';
+          content = '✓';
+        } else {
+          dotClass += ' empty';
+        }
+
+        if (day.isToday) {
+          dotClass += ' today';
+        }
+
+        return `
+          <div class="day-indicator">
+            <span class="day-name">${day.dayName}</span>
+            <div class="${dotClass}">${content}</div>
+          </div>
+        `;
+      }).join('');
+
+      // Update progress bar
+      document.getElementById('weekProgressBar').style.width = `${weekProgress}%`;
+
+      // Update progress message
+      const messageEl = document.getElementById('progressMessage');
+      if (daysWithEntries === 7) {
+        messageEl.textContent = '🎉 Perfect week! You captured every day!';
+        messageEl.style.color = '#22c55e';
+      } else if (daysWithEntries >= 5) {
+        messageEl.textContent = `Amazing! ${daysWithEntries}/7 days. Keep it up!`;
+        messageEl.style.color = '#a78bfa';
+      } else if (!hasTodayEntry) {
+        const remaining = 7 - daysWithEntries;
+        messageEl.textContent = `${daysWithEntries}/7 days this week. ${remaining} more to go!`;
+        messageEl.style.color = '#94a3b8';
+      } else {
+        messageEl.textContent = `${daysWithEntries}/7 days. You're building a great habit!`;
+        messageEl.style.color = '#94a3b8';
+      }
+
+      // Also update the streak in the stats grid
+      document.getElementById('streakCount').textContent = currentStreak;
+    }
+
+    // ============ ONE-TAP MOOD ============
+
+    let selectedMoodBtn = null;
+
+    function selectMood(btn) {
+      // Deselect previous
+      document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+
+      // Select new
+      btn.classList.add('selected');
+      selectedMoodBtn = btn;
+
+      // Show note section
+      document.getElementById('moodNoteSection').style.display = 'block';
+      document.getElementById('moodNote').focus();
+    }
+
+    function cancelMood() {
+      document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+      selectedMoodBtn = null;
+      document.getElementById('moodNoteSection').style.display = 'none';
+      document.getElementById('moodNote').value = '';
+      document.getElementById('moodStatus').textContent = '';
+    }
+
+    async function saveMood() {
+      if (!selectedMoodBtn) {
+        alert('Please select a mood first');
+        return;
+      }
+
+      const mood = selectedMoodBtn.dataset.mood;
+      const sentimentScore = parseFloat(selectedMoodBtn.dataset.score);
+      const note = document.getElementById('moodNote').value.trim();
+
+      document.getElementById('moodStatus').textContent = 'Saving...';
+
+      try {
+        const res = await fetch('/api/lifelog/mood', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mood,
+            sentimentScore,
+            note: note || null,
+            context: context
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          document.getElementById('moodStatus').textContent = '✓ Mood logged!';
+          document.getElementById('moodStatus').style.color = '#22c55e';
+
+          // Reset UI
+          setTimeout(() => {
+            cancelMood();
+            document.getElementById('moodStatus').style.color = '#64748b';
+          }, 2000);
+
+          // Refresh stats and progress
+          loadStats();
+          loadProgress();
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (e) {
+        document.getElementById('moodStatus').textContent = '✗ Failed to save';
+        document.getElementById('moodStatus').style.color = '#ef4444';
+      }
+    }
+
+    // ============ FRESH START EFFECT ============
+
+    function checkFreshStart() {
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      const dismissed = localStorage.getItem(FRESH_START_DISMISSED);
+
+      // Don't show if already dismissed today
+      if (dismissed === today) return null;
+
+      const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday
+      const dayOfMonth = now.getDate();
+
+      // Monday - fresh week
+      if (dayOfWeek === 1) {
+        return {
+          type: 'monday',
+          title: 'Fresh Week!',
+          message: 'A new week begins. Would you like to set an intention?',
+          emoji: '🌅'
+        };
+      }
+
+      // 1st of month
+      if (dayOfMonth === 1) {
+        return {
+          type: 'month',
+          title: 'New Month, New Chapter',
+          message: 'What would you like to focus on this month?',
+          emoji: '📅'
+        };
+      }
+
+      return null;
+    }
+
+    async function checkReturnGap() {
+      try {
+        const entries = await fetch('/api/lifelog/entries').then(r => r.json());
+        if (entries.length === 0) return null;
+
+        const lastEntry = entries[entries.length - 1];
+        const lastDate = new Date(lastEntry.timestamp);
+        const now = new Date();
+        const daysDiff = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
+
+        if (daysDiff >= 3) {
+          return {
+            type: 'return',
+            title: 'Welcome Back!',
+            message: `It's been ${daysDiff} days. Good to see you again. What's on your mind?`,
+            emoji: '👋'
+          };
+        }
+      } catch (e) {
+        console.error('Error checking return gap:', e);
+      }
+      return null;
+    }
+
+    async function showFreshStartIfNeeded() {
+      // Check temporal landmarks first
+      let prompt = checkFreshStart();
+
+      // If no temporal landmark, check return gap
+      if (!prompt) {
+        prompt = await checkReturnGap();
+      }
+
+      if (prompt) {
+        document.getElementById('freshStartEmoji').textContent = prompt.emoji;
+        document.getElementById('freshStartTitle').textContent = prompt.title;
+        document.getElementById('freshStartMessage').textContent = prompt.message;
+        document.getElementById('freshStartModal').style.display = 'flex';
+      }
+    }
+
+    function dismissFreshStart() {
+      const today = new Date().toISOString().split('T')[0];
+      localStorage.setItem(FRESH_START_DISMISSED, today);
+      document.getElementById('freshStartModal').style.display = 'none';
+    }
+
+    async function saveIntention() {
+      const intention = document.getElementById('intentionInput').value.trim();
+      if (!intention) {
+        alert('Please enter your intention');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/lifelog/mood', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mood: '🎯',
+            sentimentScore: 0.8,
+            note: `My intention: ${intention}`,
+            context: 'personal'
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          const today = new Date().toISOString().split('T')[0];
+          localStorage.setItem(FRESH_START_DISMISSED, today);
+          document.getElementById('freshStartModal').style.display = 'none';
+          document.getElementById('intentionInput').value = '';
+          loadStats();
+          loadProgress();
+        }
+      } catch (e) {
+        alert('Failed to save intention');
+      }
+    }
+
+    // ============ SETTINGS ============
+
+    async function openSettings() {
+      document.getElementById('settingsModal').style.display = 'flex';
+
+      // Load current status
+      try {
+        const status = await fetch('/api/status').then(r => r.json());
+
+        document.getElementById('settingsWhisper').textContent = status.whisperEnabled ? '✓ Enabled' : '✗ Disabled';
+        document.getElementById('settingsWhisper').style.color = status.whisperEnabled ? '#22c55e' : '#ef4444';
+
+        document.getElementById('settingsClaude').textContent = status.claudeEnabled ? '✓ Enabled' : '✗ Disabled';
+        document.getElementById('settingsClaude').style.color = status.claudeEnabled ? '#a78bfa' : '#ef4444';
+
+        document.getElementById('settingsTotal').textContent = status.total || 0;
+      } catch (e) {
+        console.error('Failed to load settings status:', e);
+      }
+    }
+
+    function closeSettings() {
+      document.getElementById('settingsModal').style.display = 'none';
+    }
+
+    async function embedAll() {
+      if (!confirm('This will generate embeddings for all entries without them. Continue?')) return;
+
+      try {
+        const res = await fetch('/api/lifelog/embed-all', { method: 'POST' });
+        const data = await res.json();
+        alert(`Embedded ${data.embedded} entries. ${data.failed} failed.`);
+      } catch (e) {
+        alert('Failed to embed entries');
+      }
+    }
+
+    function resetFreshStart() {
+      localStorage.removeItem(FRESH_START_DISMISSED);
+      alert('Fresh Start prompts will show again on next trigger (Monday, 1st of month, or after 3+ days away).');
+    }
+
+    async function saveOpenAIKey() {
+      const key = document.getElementById('openaiKeyInput').value.trim();
+      if (!key) {
+        alert('Please enter an API key');
+        return;
+      }
+      if (!key.startsWith('sk-')) {
+        alert('OpenAI keys typically start with "sk-"');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/config/openai-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key })
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('openaiKeyInput').value = '';
+          document.getElementById('settingsWhisper').textContent = '✓ Enabled';
+          document.getElementById('settingsWhisper').style.color = '#22c55e';
+          loadStats();
+        } else {
+          alert('Failed to save key: ' + (data.error || 'Unknown error'));
+        }
+      } catch (e) {
+        alert('Failed to save key');
+      }
+    }
+
+    async function saveAnthropicKey() {
+      const key = document.getElementById('anthropicKeyInput').value.trim();
+      if (!key) {
+        alert('Please enter an API key');
+        return;
+      }
+      if (!key.startsWith('sk-ant-')) {
+        alert('Anthropic keys typically start with "sk-ant-"');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/config/anthropic-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key })
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('anthropicKeyInput').value = '';
+          document.getElementById('settingsClaude').textContent = '✓ Enabled';
+          document.getElementById('settingsClaude').style.color = '#a78bfa';
+          loadStats();
+        } else {
+          alert('Failed to save key: ' + (data.error || 'Unknown error'));
+        }
+      } catch (e) {
+        alert('Failed to save key');
+      }
+    }
+
+    // Close settings on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeSettings();
+        document.getElementById('freshStartModal').style.display = 'none';
+      }
+    });
+
+    // Close modals when clicking overlay
+    document.getElementById('settingsModal').addEventListener('click', (e) => {
+      if (e.target.id === 'settingsModal') closeSettings();
+    });
+
     // Initial load
     loadStats();
+    loadProgress();
     loadPlugins();
+
+    // Check for fresh start after a brief delay
+    setTimeout(showFreshStartIfNeeded, 500);
   </script>
 </body>
 </html>
