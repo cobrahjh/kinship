@@ -87,6 +87,15 @@
     .empty-state { text-align: center; padding: 40px; color: #64748b; }
     .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
 
+    /* Plugin iframe styles */
+    .plugin-frame {
+      width: 100%;
+      min-height: 500px;
+      border: none;
+      border-radius: 16px;
+      background: #1e293b;
+    }
+
     @media (max-width: 600px) {
       .stats-grid { grid-template-columns: 1fr; }
     }
@@ -120,7 +129,7 @@
       </div>
     </div>
 
-    <div class="tabs">
+    <div class="tabs" id="tabsContainer">
       <button class="tab-btn active" onclick="showTab('capture')">Capture</button>
       <button class="tab-btn" onclick="showTab('journal')">Journal</button>
       <button class="tab-btn" onclick="showTab('search')">Search</button>
@@ -222,6 +231,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Plugin Tabs Container -->
+    <div id="pluginTabsContainer"></div>
   </div>
 
   <script>
@@ -230,6 +242,45 @@
     let chunks = [];
     let context = 'auto';
     let digestMode = 'day';
+    let loadedPlugins = [];
+
+    // Load plugins dynamically
+    async function loadPlugins() {
+      try {
+        const res = await fetch('/api/plugins');
+        const plugins = await res.json();
+        loadedPlugins = plugins;
+
+        const tabsContainer = document.getElementById('tabsContainer');
+        const pluginContainer = document.getElementById('pluginTabsContainer');
+
+        plugins.forEach(plugin => {
+          // Add tab button
+          const tabBtn = document.createElement('button');
+          tabBtn.className = 'tab-btn';
+          tabBtn.onclick = () => showTab(`plugin-${plugin.name}`);
+          tabBtn.textContent = plugin.label;
+          tabsContainer.appendChild(tabBtn);
+
+          // Add tab content with iframe
+          const tabContent = document.createElement('div');
+          tabContent.id = `plugin-${plugin.name}Tab`;
+          tabContent.style.display = 'none';
+          tabContent.innerHTML = `
+            <iframe
+              class="plugin-frame"
+              src="/plugins/${plugin.name}/index.html"
+              title="${plugin.label}"
+            ></iframe>
+          `;
+          pluginContainer.appendChild(tabContent);
+        });
+
+        console.log(`Loaded ${plugins.length} plugin(s)`);
+      } catch (e) {
+        console.log('No plugins loaded:', e.message);
+      }
+    }
 
     function setDigestMode(mode) {
       digestMode = mode;
@@ -261,14 +312,31 @@
     function showTab(tab) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelector(`.tab-btn[onclick="showTab('${tab}')"]`).classList.add('active');
-      document.getElementById('captureTab').style.display = tab === 'capture' ? 'block' : 'none';
-      document.getElementById('journalTab').style.display = tab === 'journal' ? 'block' : 'none';
-      document.getElementById('searchTab').style.display = tab === 'search' ? 'block' : 'none';
-      document.getElementById('digestTab').style.display = tab === 'digest' ? 'block' : 'none';
-      document.getElementById('patternsTab').style.display = tab === 'patterns' ? 'block' : 'none';
+
+      // Hide all core tabs
+      document.getElementById('captureTab').style.display = 'none';
+      document.getElementById('journalTab').style.display = 'none';
+      document.getElementById('searchTab').style.display = 'none';
+      document.getElementById('digestTab').style.display = 'none';
+      document.getElementById('patternsTab').style.display = 'none';
+
+      // Hide all plugin tabs
+      loadedPlugins.forEach(p => {
+        const pluginTab = document.getElementById(`plugin-${p.name}Tab`);
+        if (pluginTab) pluginTab.style.display = 'none';
+      });
+
+      // Show selected tab
+      if (tab.startsWith('plugin-')) {
+        const pluginTab = document.getElementById(`${tab}Tab`);
+        if (pluginTab) pluginTab.style.display = 'block';
+      } else {
+        const tabEl = document.getElementById(`${tab}Tab`);
+        if (tabEl) tabEl.style.display = 'block';
+      }
+
       if (tab === 'journal') loadEntries();
       if (tab === 'digest') {
-        // Set default date to today
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('digestDate').value = today;
       }
@@ -740,6 +808,7 @@
 
     // Initial load
     loadStats();
+    loadPlugins();
   </script>
 </body>
 </html>

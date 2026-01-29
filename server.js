@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const OpenAI = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
+const { loadPlugins, getPluginRegistry, callHook } = require('./plugins/loader');
 
 const app = express();
 const PORT = 8766;
@@ -411,6 +412,12 @@ app.post('/api/lifelog/ingest', upload.single('audio'), (req, res) => {
     entries.push(entry);
     saveEntries();
     log(`New entry saved: id=${entry.id}, audio=${hasAudio ? 'yes' : 'no'}`);
+
+    // Call plugin hooks for new entry
+    callHook('onEntryCreated', entry).catch(err => {
+      log(`Hook onEntryCreated error: ${err.message}`, 'ERROR');
+    });
+
     res.json({ success: true, entryId: entry.id });
 
     // Auto-transcribe if audio present and API key configured
@@ -438,6 +445,11 @@ app.post('/api/lifelog/ingest', upload.single('audio'), (req, res) => {
               });
               saveEntries();
               log(`Analyzed entry ${entry.id}: ${analysis.sentiment}, "${analysis.summary.substring(0, 40)}..."`);
+
+              // Call plugin hooks for analyzed entry
+              callHook('onEntryAnalyzed', entry).catch(err => {
+                log(`Hook onEntryAnalyzed error: ${err.message}`, 'ERROR');
+              });
 
               // Generate embedding for semantic search
               try {
@@ -738,8 +750,22 @@ app.get('/api/lifelog/digest/:date', async (req, res) => {
     sentiments,
     topics: [...new Set(dayEntries.flatMap(e => e.topics || []))],
     actionItems: dayEntries.flatMap(e => e.actionItems || []),
-    entries: dayEntries
+    entries: dayEntries,
+    pluginContributions: []
   };
+
+  // Collect plugin contributions to digest
+  try {
+    const contributions = await callHook('contributeToDigest', dayEntries, {
+      start: dateStr,
+      end: dateStr
+    });
+    basicDigest.pluginContributions = contributions
+      .filter(c => c.result !== null)
+      .map(c => c.result);
+  } catch (err) {
+    log(`Plugin digest contribution error: ${err.message}`, 'ERROR');
+  }
 
   // Generate AI digest if requested and Claude is available
   if (req.query.ai === 'true' && process.env.ANTHROPIC_API_KEY && dayEntries.length > 0) {
@@ -802,7 +828,21 @@ app.get('/api/lifelog/digest/week/:date', async (req, res) => {
     sentiments,
     topics: [...new Set(weekEntries.flatMap(e => e.topics || []))],
     actionItems: weekEntries.flatMap(e => e.actionItems || []),
+    pluginContributions: []
   };
+
+  // Collect plugin contributions to weekly digest
+  try {
+    const contributions = await callHook('contributeToDigest', weekEntries, {
+      start: startStr,
+      end: endStr
+    });
+    basicDigest.pluginContributions = contributions
+      .filter(c => c.result !== null)
+      .map(c => c.result);
+  } catch (err) {
+    log(`Plugin weekly digest contribution error: ${err.message}`, 'ERROR');
+  }
 
   // Generate AI digest if requested
   if (req.query.ai === 'true' && process.env.ANTHROPIC_API_KEY && weekEntries.length > 0) {
@@ -897,7 +937,51 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
+// ============ PLUGIN SYSTEM ============
+
+// List registered plugins (for frontend dynamic tabs)
+app.get('/api/plugins', (req, res) => {
+  const plugins = getPluginRegistry().map(p => ({
+    name: p.name,
+    label: p.label,
+    version: p.version,
+    description: p.description || ''
+  }));
+  res.json(plugins);
+});
+
+// Load and mount plugins
+async function initializePlugins() {
+  const context = {
+    entries,
+    saveEntries,
+    log,
+    generateEmbedding: process.env.OPENAI_API_KEY ? generateEmbedding : null,
+    analyzeTranscript: process.env.ANTHROPIC_API_KEY ? analyzeTranscript : null
+  };
+
+  const plugins = await loadPlugins('./plugins', context);
+
+  plugins.forEach(plugin => {
+    // Mount API routes at /api/plugins/[plugin-name]
+    if (plugin.routes) {
+      app.use(`/api/plugins/${plugin.name}`, plugin.routes);
+      log(`Plugin routes mounted: /api/plugins/${plugin.name}`);
+    }
+
+    // Serve static files at /plugins/[plugin-name]
+    if (plugin.publicDir && fs.existsSync(plugin.publicDir)) {
+      app.use(`/plugins/${plugin.name}`, express.static(plugin.publicDir));
+      log(`Plugin static files: /plugins/${plugin.name}`);
+    }
+  });
+
+  log(`Loaded ${plugins.length} plugin(s)`);
+}
+
+// Start server after plugins are loaded
+initializePlugins().then(() => {
+  app.listen(PORT, () => {
   console.log(`
 ╔═══════════════════════════════════════════════════════╗
 ║              KINSHIP LifeLog v1.0.0                   ║
@@ -908,4 +992,8 @@ app.listen(PORT, () => {
 ║  Your voice. Your memories. Your life.               ║
 ╚═══════════════════════════════════════════════════════╝
 `);
+  });
+}).catch(err => {
+  console.error('Failed to initialize plugins:', err);
+  process.exit(1);
 });
