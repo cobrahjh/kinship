@@ -25,6 +25,32 @@ async function transcribeAudio(audioPath) {
   return response;
 }
 
+// ============ OPENAI / EMBEDDINGS ============
+async function generateEmbedding(text) {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY not set');
+  }
+
+  const response = await openai.embeddings.create({
+    model: 'text-embedding-3-small',
+    input: text,
+  });
+
+  return response.data[0].embedding;
+}
+
+function cosineSimilarity(a, b) {
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dotProduct += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
 // ============ ANTHROPIC / CLAUDE ANALYSIS ============
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -264,14 +290,35 @@ app.post('/api/lifelog/ingest', upload.single('audio'), (req, res) => {
               });
               saveEntries();
               log(`Analyzed entry ${entry.id}: ${analysis.sentiment}, "${analysis.summary.substring(0, 40)}..."`);
+
+              // Generate embedding for semantic search
+              try {
+                const textToEmbed = `${transcript} ${analysis.summary}`;
+                entry.embedding = await generateEmbedding(textToEmbed);
+                entry.embeddedAt = new Date().toISOString();
+                saveEntries();
+                log(`Embedded entry ${entry.id}`);
+              } catch (embErr) {
+                log(`Embedding failed for ${entry.id}: ${embErr.message}`, 'ERROR');
+              }
             } catch (err) {
               log(`Analysis failed for ${entry.id}: ${err.message}`, 'ERROR');
               entry.processed = true;
               saveEntries();
             }
           } else {
-            entry.processed = true;
-            saveEntries();
+            // No Claude key, just embed transcript
+            try {
+              entry.embedding = await generateEmbedding(transcript);
+              entry.embeddedAt = new Date().toISOString();
+              entry.processed = true;
+              saveEntries();
+              log(`Embedded entry ${entry.id} (no analysis)`);
+            } catch (embErr) {
+              log(`Embedding failed for ${entry.id}: ${embErr.message}`, 'ERROR');
+              entry.processed = true;
+              saveEntries();
+            }
           }
         })
         .catch(err => {
@@ -390,6 +437,106 @@ app.get('/api/lifelog/search', (req, res) => {
   );
 
   res.json(results);
+});
+
+// Semantic search using embeddings
+app.get('/api/lifelog/search/semantic', async (req, res) => {
+  const { q, limit = 10, threshold = 0.3 } = req.query;
+
+  if (!q) {
+    return res.status(400).json({ error: 'Query required' });
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).json({ error: 'OPENAI_API_KEY not configured for semantic search' });
+  }
+
+  try {
+    log(`Semantic search: "${q}"`);
+
+    // Generate embedding for query
+    const queryEmbedding = await generateEmbedding(q);
+
+    // Find entries with embeddings and calculate similarity
+    const entriesWithEmbeddings = entries.filter(e => e.embedding);
+
+    if (entriesWithEmbeddings.length === 0) {
+      return res.json({ results: [], message: 'No embedded entries yet' });
+    }
+
+    const scored = entriesWithEmbeddings.map(e => ({
+      ...e,
+      similarity: cosineSimilarity(queryEmbedding, e.embedding)
+    }));
+
+    // Sort by similarity and filter by threshold
+    const results = scored
+      .filter(e => e.similarity >= parseFloat(threshold))
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, parseInt(limit))
+      .map(e => {
+        // Remove embedding from response (too large)
+        const { embedding, ...rest } = e;
+        return rest;
+      });
+
+    log(`Semantic search found ${results.length} results`);
+    res.json({ results, query: q, totalEmbedded: entriesWithEmbeddings.length });
+  } catch (err) {
+    log(`Semantic search error: ${err.message}`, 'ERROR');
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Embed a single entry manually
+app.post('/api/lifelog/embed/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  const entry = entries.find(e => e.id === id);
+
+  if (!entry) return res.status(404).json({ error: 'Entry not found' });
+  if (!entry.transcript) return res.status(400).json({ error: 'No transcript to embed' });
+  if (!process.env.OPENAI_API_KEY) return res.status(500).json({ error: 'OPENAI_API_KEY not configured' });
+
+  try {
+    const textToEmbed = entry.summary ? `${entry.transcript} ${entry.summary}` : entry.transcript;
+    entry.embedding = await generateEmbedding(textToEmbed);
+    entry.embeddedAt = new Date().toISOString();
+    saveEntries();
+    log(`Manually embedded entry ${id}`);
+    res.json({ success: true });
+  } catch (err) {
+    log(`Embed failed for ${id}: ${err.message}`, 'ERROR');
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Embed all entries that don't have embeddings
+app.post('/api/lifelog/embed-all', async (req, res) => {
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).json({ error: 'OPENAI_API_KEY not configured' });
+  }
+
+  const unembedded = entries.filter(e => e.transcript && !e.embedding);
+  log(`Embedding ${unembedded.length} entries...`);
+
+  let embedded = 0;
+  let failed = 0;
+
+  for (const entry of unembedded) {
+    try {
+      const textToEmbed = entry.summary ? `${entry.transcript} ${entry.summary}` : entry.transcript;
+      entry.embedding = await generateEmbedding(textToEmbed);
+      entry.embeddedAt = new Date().toISOString();
+      embedded++;
+    } catch (err) {
+      log(`Embed failed for ${entry.id}: ${err.message}`, 'ERROR');
+      failed++;
+    }
+  }
+
+  saveEntries();
+  log(`Embedding complete: ${embedded} success, ${failed} failed`);
+  res.json({ success: true, embedded, failed, total: unembedded.length });
 });
 
 // Get entries for date
@@ -536,7 +683,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'kinship-lifelog',
-    version: '1.4.0',
+    version: '1.5.0',
     uptime: process.uptime(),
     entries: entries.length,
     whisperEnabled: !!process.env.OPENAI_API_KEY,

@@ -123,6 +123,7 @@
     <div class="tabs">
       <button class="tab-btn active" onclick="showTab('capture')">Capture</button>
       <button class="tab-btn" onclick="showTab('journal')">Journal</button>
+      <button class="tab-btn" onclick="showTab('search')">Search</button>
       <button class="tab-btn" onclick="showTab('digest')">Digest</button>
     </div>
 
@@ -154,6 +155,23 @@
           <div class="empty-state">
             <div class="icon">🎙️</div>
             <p>No notes yet.<br>Record your first voice note!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="searchTab" style="display: none;">
+      <div class="card">
+        <h2><span>🔍</span> Semantic Search</h2>
+        <p style="color: #94a3b8; margin-bottom: 16px;">Search by meaning, not just keywords. Find related thoughts across all your notes.</p>
+        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+          <input type="text" id="searchQuery" placeholder="What are you looking for?" style="flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 15px;">
+          <button onclick="semanticSearch()" style="padding: 12px 24px; border-radius: 12px; border: none; background: #2563eb; color: #fff; cursor: pointer; font-size: 15px;">Search</button>
+        </div>
+        <div id="searchResults">
+          <div class="empty-state">
+            <div class="icon">🔍</div>
+            <p>Enter a question or topic to search<br>across all your voice notes.</p>
           </div>
         </div>
       </div>
@@ -219,6 +237,7 @@
       document.querySelector(`.tab-btn[onclick="showTab('${tab}')"]`).classList.add('active');
       document.getElementById('captureTab').style.display = tab === 'capture' ? 'block' : 'none';
       document.getElementById('journalTab').style.display = tab === 'journal' ? 'block' : 'none';
+      document.getElementById('searchTab').style.display = tab === 'search' ? 'block' : 'none';
       document.getElementById('digestTab').style.display = tab === 'digest' ? 'block' : 'none';
       if (tab === 'journal') loadEntries();
       if (tab === 'digest') {
@@ -536,6 +555,61 @@
         content.innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>Failed to load digest.</p></div>';
       }
     }
+
+    async function semanticSearch() {
+      const query = document.getElementById('searchQuery').value.trim();
+      if (!query) {
+        alert('Please enter a search query');
+        return;
+      }
+
+      const results = document.getElementById('searchResults');
+      results.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Searching...</p></div>';
+
+      try {
+        const res = await fetch(`/api/lifelog/search/semantic?q=${encodeURIComponent(query)}&limit=10`);
+        const data = await res.json();
+
+        if (data.error) {
+          results.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>${data.error}</p></div>`;
+          return;
+        }
+
+        if (!data.results || data.results.length === 0) {
+          results.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>No matching entries found.<br>${data.message || ''}</p></div>`;
+          return;
+        }
+
+        let html = `<p style="color: #64748b; font-size: 13px; margin-bottom: 12px;">Found ${data.results.length} results (${data.totalEmbedded} entries indexed)</p>`;
+
+        html += data.results.map(e => `
+          <div class="entry-item">
+            <div class="entry-header">
+              <span class="entry-context">${getContextEmoji(e.context)} ${e.context}</span>
+              <span class="entry-time">${formatTime(e.timestamp)}</span>
+            </div>
+            <div style="font-size: 12px; color: #a78bfa; margin-bottom: 4px;">Match: ${(e.similarity * 100).toFixed(1)}%</div>
+            <div class="entry-text">${e.summary || e.transcript || '(no content)'}</div>
+            ${e.topics?.length ? `<div class="entry-meta">${e.topics.map(t => `<span class="entry-tag">${t}</span>`).join('')}</div>` : ''}
+          </div>
+        `).join('');
+
+        results.innerHTML = html;
+      } catch (e) {
+        console.error(e);
+        results.innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>Search failed.</p></div>';
+      }
+    }
+
+    // Allow Enter key to trigger search
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('searchQuery');
+      if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') semanticSearch();
+        });
+      }
+    });
 
     // Initial load
     loadStats();
