@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "KinshipCompanion"
 include(":app")
+include(":watch")

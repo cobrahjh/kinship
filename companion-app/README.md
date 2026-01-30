@@ -17,21 +17,46 @@ Android companion app for Kinship that connects your Samsung Watch to the Kinshi
 
 ## Setup
 
-1. **Build the app**:
-   ```bash
-   cd companion-app
-   ./gradlew assembleDebug
-   ```
+### 1. Build Both Apps
 
-2. **Install on your phone**:
-   ```bash
-   adb install app/build/outputs/apk/debug/app-debug.apk
-   ```
+```bash
+cd companion-app
+./gradlew assembleDebug
+```
 
-3. **Configure server URL**:
-   - Open Kinship Companion app
-   - Enter your Kinship server URL (e.g., `http://192.168.1.100:8766`)
-   - Tap "Save" and "Test" to verify connection
+This builds:
+- `app/build/outputs/apk/debug/app-debug.apk` (phone app)
+- `watch/build/outputs/apk/debug/watch-debug.apk` (watch app)
+
+### 2. Install Phone App
+
+```bash
+adb install app/build/outputs/apk/debug/app-debug.apk
+```
+
+### 3. Install Watch App
+
+```bash
+adb -s <watch-device-id> install watch/build/outputs/apk/debug/watch-debug.apk
+```
+
+To find your watch device ID:
+```bash
+adb devices
+```
+
+### 4. Configure Server URL
+
+- Open Kinship Companion app on phone
+- Enter your Kinship server URL (e.g., `http://192.168.1.100:8766`)
+- Tap "Save" and "Test" to verify connection
+
+### 5. Use the Watch App
+
+- Open "Kinship" on your watch
+- Tap the blue microphone button to start recording
+- Tap the red stop button when done
+- Recording is sent to phone → uploaded to Kinship
 
 ## How It Works
 
@@ -51,7 +76,7 @@ Android companion app for Kinship that connects your Samsung Watch to the Kinshi
 
 ```
 companion-app/
-├── app/
+├── app/                              # Phone app
 │   ├── src/main/
 │   │   ├── java/com/kinship/companion/
 │   │   │   ├── KinshipApp.kt           # Application class
@@ -62,9 +87,13 @@ companion-app/
 │   │   │   ├── SyncService.kt           # Foreground service
 │   │   │   └── BootReceiver.kt          # Auto-start on boot
 │   │   ├── res/
-│   │   │   ├── layout/activity_main.xml
-│   │   │   ├── values/
-│   │   │   └── drawable/
+│   │   └── AndroidManifest.xml
+│   └── build.gradle.kts
+├── watch/                            # Watch app (Wear OS)
+│   ├── src/main/
+│   │   ├── java/com/kinship/watch/
+│   │   │   └── MainActivity.kt          # Record button UI
+│   │   ├── res/
 │   │   └── AndroidManifest.xml
 │   └── build.gradle.kts
 ├── build.gradle.kts
