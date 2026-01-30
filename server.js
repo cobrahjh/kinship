@@ -1351,13 +1351,25 @@ app.post('/api/sync/import', (req, res) => {
           if (entry.familyId !== familyConfig.familyId) continue;
 
           // Check if already imported (by id + ownerId)
-          const exists = familyFeed.find(e => e.id === entry.id && e.ownerId === entry.ownerId);
-          if (!exists) {
+          const existingIndex = familyFeed.findIndex(e => e.id === entry.id && e.ownerId === entry.ownerId);
+          if (existingIndex === -1) {
+            // New entry
+            entry.importedAt = new Date().toISOString();
             familyFeed.push(entry);
             importedCount++;
           } else {
-            // Update existing entry
-            Object.assign(exists, entry);
+            // Conflict handling: prefer newer version based on exportedAt timestamp
+            const existing = familyFeed[existingIndex];
+            const existingTime = new Date(existing.exportedAt || existing.importedAt || 0);
+            const newTime = new Date(entry.exportedAt || 0);
+
+            if (newTime > existingTime) {
+              // Incoming entry is newer, update
+              entry.importedAt = new Date().toISOString();
+              entry.previousVersion = existing.exportedAt;
+              familyFeed[existingIndex] = entry;
+            }
+            // Otherwise keep existing (it's newer or same)
           }
         }
       } catch (e) {

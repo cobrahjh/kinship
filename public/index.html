@@ -48,6 +48,35 @@
     .ctx-btn:hover { border-color: #3b82f6; }
     .ctx-btn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
 
+    /* Family Improvements */
+    .sync-indicator { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; font-size: 13px; transition: all 0.3s; }
+    .sync-indicator.idle { background: #334155; color: #94a3b8; }
+    .sync-indicator.syncing { background: #1e3a5f; color: #60a5fa; }
+    .sync-indicator.success { background: #14532d; color: #86efac; }
+    .sync-indicator.error { background: #7f1d1d; color: #fca5a5; }
+    .sync-indicator .spinner { width: 14px; height: 14px; border: 2px solid transparent; border-top-color: currentColor; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .member-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; color: #fff; flex-shrink: 0; }
+
+    .unread-badge { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; background: #ef4444; border-radius: 9px; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; padding: 0 5px; }
+
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+    .toast { padding: 14px 20px; border-radius: 12px; background: #1e293b; border: 1px solid #334155; box-shadow: 0 4px 20px rgba(0,0,0,0.3); animation: slideIn 0.3s ease; display: flex; align-items: center; gap: 12px; max-width: 350px; }
+    .toast.success { border-color: #22c55e; }
+    .toast.info { border-color: #3b82f6; }
+    .toast.warning { border-color: #f59e0b; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    .confirm-modal { background: rgba(0,0,0,0.8); }
+    .confirm-modal .modal-content { text-align: center; }
+    .confirm-buttons { display: flex; gap: 12px; margin-top: 20px; }
+    .confirm-buttons button { flex: 1; padding: 14px; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; border: none; }
+    .confirm-buttons .cancel { background: #334155; color: #f8fafc; }
+    .confirm-buttons .danger { background: #dc2626; color: #fff; }
+
+    .qr-container { text-align: center; padding: 20px; background: #fff; border-radius: 12px; margin: 16px 0; }
+
     /* Entries List */
     .entries-list { max-height: 400px; overflow-y: auto; }
     .entry-item { background: #0f172a; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #334155; }
@@ -266,7 +295,7 @@
       <button class="tab-btn" onclick="showTab('search')">Search</button>
       <button class="tab-btn" onclick="showTab('digest')">Digest</button>
       <button class="tab-btn" onclick="showTab('patterns')">Patterns</button>
-      <button class="tab-btn" id="familyTabBtn" onclick="showTab('family')" style="display: none;">Family</button>
+      <button class="tab-btn" id="familyTabBtn" onclick="showTab('family')" style="display: none; position: relative;">Family<span class="unread-badge" id="familyUnreadBadge" style="display: none;">0</span></button>
     </div>
 
     <div id="captureTab">
@@ -434,11 +463,19 @@
         <div id="familyMembersList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;"></div>
 
         <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-          <button class="action-btn" onclick="syncFamily()" style="flex: 1; background: #2563eb;">Sync Now</button>
+          <button class="action-btn" id="syncFamilyBtn" onclick="syncFamily()" style="flex: 1; background: #2563eb;">
+            <span id="syncBtnText">Sync Now</span>
+          </button>
           <button class="action-btn" onclick="showInviteModal()" style="flex: 1; background: #334155;">Invite</button>
         </div>
 
-        <p style="font-size: 12px; color: #64748b;" id="lastSyncText">Last sync: Never</p>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <p style="font-size: 12px; color: #64748b;" id="lastSyncText">Last sync: Never</p>
+          <div class="sync-indicator idle" id="syncIndicator">
+            <span id="syncStatusIcon">●</span>
+            <span id="syncStatusText">Ready</span>
+          </div>
+        </div>
       </div>
 
       <div class="section-card" id="familyDigestCard" style="display: none;">
@@ -534,9 +571,14 @@
 
       <p style="color: #94a3b8; margin-bottom: 16px;">Share this code with family members:</p>
 
+      <div class="qr-container" id="qrCodeContainer">
+        <canvas id="qrCodeCanvas"></canvas>
+        <p style="color: #64748b; font-size: 12px; margin-top: 8px;">Scan with phone camera</p>
+      </div>
+
       <div style="background: #0f172a; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
         <input type="text" id="inviteCodeDisplay" readonly style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #f8fafc; font-size: 13px; margin-bottom: 8px;">
-        <button onclick="copyInviteCode()" style="width: 100%; padding: 10px; background: #2563eb; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 14px;">Copy Invite Code</button>
+        <button onclick="copyInviteCode()" id="copyInviteBtn" style="width: 100%; padding: 10px; background: #2563eb; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 14px;">Copy Invite Code</button>
       </div>
 
       <p style="font-size: 12px; color: #64748b; text-align: center;">Or send via email:</p>
@@ -563,9 +605,26 @@
         <div id="familySettingsMembersList" style="max-height: 150px; overflow-y: auto;"></div>
       </div>
 
-      <button onclick="leaveFamily()" style="width: 100%; padding: 12px; background: #7f1d1d; border: none; border-radius: 8px; color: #fca5a5; font-size: 14px; cursor: pointer;">Leave Family</button>
+      <button onclick="showLeaveFamilyConfirm()" style="width: 100%; padding: 12px; background: #7f1d1d; border: none; border-radius: 8px; color: #fca5a5; font-size: 14px; cursor: pointer;">Leave Family</button>
     </div>
   </div>
+
+  <!-- Leave Family Confirmation Modal -->
+  <div class="modal-overlay confirm-modal" id="leaveFamilyModal" style="display: none;">
+    <div class="modal-content" style="max-width: 360px;">
+      <div style="font-size: 48px; margin-bottom: 16px;">👋</div>
+      <h2 style="font-size: 20px; margin-bottom: 8px;">Leave Family?</h2>
+      <p style="color: #94a3b8; margin-bottom: 8px;">Are you sure you want to leave <strong id="leaveFamilyName"></strong>?</p>
+      <p style="color: #64748b; font-size: 13px;">Your shared entries will no longer be visible to family members.</p>
+      <div class="confirm-buttons">
+        <button class="cancel" onclick="closeLeaveFamilyModal()">Cancel</button>
+        <button class="danger" onclick="confirmLeaveFamily()">Leave Family</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
 
   <!-- Settings Modal -->
   <div class="modal-overlay" id="settingsModal" style="display: none;">
@@ -702,6 +761,8 @@
     </div>
   </div>
 
+  <!-- QR Code Library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <script>
     let recording = false;
     let mediaRecorder = null;
@@ -807,7 +868,10 @@
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('digestDate').value = today;
       }
-      if (tab === 'family') loadFamilyFeed();
+      if (tab === 'family') {
+        loadFamilyFeed();
+        clearUnreadBadge();
+      }
     }
 
     // Record button
@@ -1813,6 +1877,50 @@
     let currentIdentity = null;
     let currentFamily = null;
     let selectedProfileColor = '#3b82f6';
+    let unreadFamilyCount = 0;
+    let lastSeenFamilyEntryTime = localStorage.getItem('lastSeenFamilyEntry') || '1970-01-01';
+
+    // Toast notification system
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <span style="font-size: 18px;">${type === 'success' ? '✓' : type === 'warning' ? '⚠' : 'ℹ'}</span>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+
+      // Remove after 4 seconds
+      setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // Unread badge management
+    function updateUnreadBadge(count) {
+      unreadFamilyCount += count;
+      const badge = document.getElementById('familyUnreadBadge');
+      if (unreadFamilyCount > 0) {
+        badge.textContent = unreadFamilyCount > 99 ? '99+' : unreadFamilyCount;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    function clearUnreadBadge() {
+      unreadFamilyCount = 0;
+      document.getElementById('familyUnreadBadge').style.display = 'none';
+      localStorage.setItem('lastSeenFamilyEntry', new Date().toISOString());
+    }
+
+    // Get initials from name
+    function getInitials(name) {
+      if (!name) return '?';
+      return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    }
 
     async function checkIdentity() {
       try {
@@ -1894,19 +2002,39 @@
           return;
         }
 
+        // Check for new entries since last seen
+        const newEntries = data.entries.filter(e => !e.isOwn && e.timestamp > lastSeenFamilyEntryTime);
+        if (newEntries.length > 0 && document.getElementById('familyTab').style.display !== 'block') {
+          updateUnreadBadge(newEntries.length);
+        }
+
         container.innerHTML = data.entries.map(e => {
           const time = new Date(e.timestamp).toLocaleString('en-US', {
             month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
           });
+          const initials = getInitials(e.ownerName);
+          const isNew = !e.isOwn && e.timestamp > lastSeenFamilyEntryTime;
 
           return `
-            <div style="background: #0f172a; border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 3px solid ${e.ownerColor || '#3b82f6'};">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-weight: 600; color: ${e.ownerColor || '#3b82f6'};">${e.ownerName || 'Unknown'}${e.isOwn ? ' (you)' : ''}</span>
-                <span style="font-size: 12px; color: #64748b;">${time}</span>
+            <div style="background: #0f172a; border-radius: 12px; padding: 16px; margin-bottom: 12px; ${isNew ? 'border: 1px solid #3b82f6;' : ''}">
+              <div style="display: flex; gap: 12px;">
+                <div class="member-avatar" style="background: ${e.ownerColor || '#3b82f6'};">${initials}</div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-weight: 600; color: ${e.ownerColor || '#3b82f6'};">
+                      ${e.ownerName || 'Unknown'}${e.isOwn ? ' <span style="color: #64748b; font-weight: normal;">(you)</span>' : ''}
+                      ${isNew ? '<span style="background: #3b82f6; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 8px;">NEW</span>' : ''}
+                    </span>
+                    <span style="font-size: 12px; color: #64748b;">${time}</span>
+                  </div>
+                  <p style="color: #f8fafc; margin-bottom: 8px; line-height: 1.5;">${e.summary || e.transcript || 'Voice note'}</p>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    ${e.mood ? `<span style="padding: 4px 10px; background: #334155; border-radius: 12px; font-size: 12px;">${e.mood}</span>` : ''}
+                    ${e.context && e.context !== 'auto' ? `<span style="padding: 4px 10px; background: #1e3a5f; border-radius: 12px; font-size: 12px; color: #93c5fd;">${e.context}</span>` : ''}
+                    ${e.sentiment ? `<span style="padding: 4px 10px; background: ${e.sentiment === 'positive' ? '#14532d' : e.sentiment === 'negative' ? '#7f1d1d' : '#334155'}; border-radius: 12px; font-size: 12px; color: ${e.sentiment === 'positive' ? '#86efac' : e.sentiment === 'negative' ? '#fca5a5' : '#94a3b8'};">${e.sentiment}</span>` : ''}
+                  </div>
+                </div>
               </div>
-              <p style="color: #f8fafc; margin-bottom: 8px;">${e.summary || e.transcript || 'Voice note'}</p>
-              ${e.mood ? `<span style="padding: 4px 10px; background: #334155; border-radius: 12px; font-size: 12px;">${e.mood}</span>` : ''}
             </div>
           `;
         }).join('');
@@ -2148,6 +2276,15 @@
         document.getElementById('inviteEmailLink').href = `mailto:?subject=${subject}&body=${body}`;
 
         document.getElementById('inviteModal').style.display = 'flex';
+
+        // Generate QR code
+        const inviteUrl = `${window.location.origin}/join-family?code=${data.inviteCode}`;
+        if (typeof QRCode !== 'undefined') {
+          const canvas = document.getElementById('qrCodeCanvas');
+          QRCode.toCanvas(canvas, inviteUrl, { width: 180, margin: 2 }, (error) => {
+            if (error) console.error('QR code error:', error);
+          });
+        }
       } catch (e) {
         alert('Error generating invite');
       }
@@ -2159,8 +2296,14 @@
 
     function copyInviteCode() {
       const code = document.getElementById('inviteCodeDisplay').value;
+      const btn = document.getElementById('copyInviteBtn');
       navigator.clipboard.writeText(code).then(() => {
-        alert('Invite code copied!');
+        btn.textContent = 'Copied!';
+        btn.style.background = '#22c55e';
+        setTimeout(() => {
+          btn.textContent = 'Copy Invite Code';
+          btn.style.background = '#2563eb';
+        }, 2000);
       });
     }
 
@@ -2185,34 +2328,53 @@
       document.getElementById('familySettingsModal').style.display = 'none';
     }
 
-    async function leaveFamily() {
-      if (!confirm('Are you sure you want to leave this family? Your entries will no longer be shared.')) return;
+    function showLeaveFamilyConfirm() {
+      document.getElementById('leaveFamilyName').textContent = currentFamily.familyName;
+      closeFamilySettings();
+      document.getElementById('leaveFamilyModal').style.display = 'flex';
+    }
 
+    function closeLeaveFamilyModal() {
+      document.getElementById('leaveFamilyModal').style.display = 'none';
+    }
+
+    async function confirmLeaveFamily() {
       try {
         const res = await fetch('/api/family/leave', { method: 'DELETE' });
         const data = await res.json();
 
         if (res.ok) {
-          closeFamilySettings();
+          closeLeaveFamilyModal();
+          showToast('You have left the family', 'info');
           await loadFamilyStatus();
           showTab('capture');
         } else {
-          alert(data.error || 'Failed to leave family');
+          showToast(data.error || 'Failed to leave family', 'warning');
         }
       } catch (e) {
-        alert('Error leaving family');
+        showToast('Error leaving family', 'warning');
       }
+    }
+
+    // Keep old function for backwards compatibility
+    async function leaveFamily() {
+      showLeaveFamilyConfirm();
     }
 
     async function syncFamily() {
       const syncPath = document.getElementById('syncPathInput')?.value || currentFamily.syncPath;
 
       if (!syncPath) {
-        // Prompt for sync path
         const path = prompt('Enter the sync folder path (e.g., C:\\Users\\Shared\\KinshipFamily or a Dropbox/Google Drive folder):');
         if (!path) return;
         currentFamily.syncPath = path;
       }
+
+      // Update UI to show syncing
+      setSyncStatus('syncing', 'Syncing...');
+      const syncBtn = document.getElementById('syncFamilyBtn');
+      syncBtn.disabled = true;
+      document.getElementById('syncBtnText').textContent = 'Syncing...';
 
       try {
         // Export first
@@ -2224,7 +2386,8 @@
         const exportData = await exportRes.json();
 
         if (!exportRes.ok) {
-          alert(exportData.error || 'Export failed');
+          setSyncStatus('error', 'Export failed');
+          showToast(exportData.error || 'Export failed', 'warning');
           return;
         }
 
@@ -2237,16 +2400,55 @@
         const importData = await importRes.json();
 
         if (!importRes.ok) {
-          alert(importData.error || 'Import failed');
+          setSyncStatus('error', 'Import failed');
+          showToast(importData.error || 'Import failed', 'warning');
           return;
         }
 
-        // Refresh
-        await loadFamilyStatus();
+        // Check for new entries and show notification
+        if (importData.imported > 0) {
+          showToast(`${importData.imported} new entries from family`, 'success');
+          updateUnreadBadge(importData.imported);
+        }
 
-        alert(`Sync complete! Exported ${exportData.exported} entries, imported ${importData.imported} new entries.`);
+        // Show new members
+        if (importData.newMembers && importData.newMembers.length > 0) {
+          showToast(`${importData.newMembers.join(', ')} joined the family!`, 'info');
+        }
+
+        // Success
+        setSyncStatus('success', 'Synced!');
+        await loadFamilyStatus();
+        await loadFamilyFeed();
+
+        // Reset status after 3 seconds
+        setTimeout(() => setSyncStatus('idle', 'Ready'), 3000);
+
       } catch (e) {
-        alert('Sync error: ' + e.message);
+        setSyncStatus('error', 'Sync failed');
+        showToast('Sync error: ' + e.message, 'warning');
+      } finally {
+        syncBtn.disabled = false;
+        document.getElementById('syncBtnText').textContent = 'Sync Now';
+      }
+    }
+
+    function setSyncStatus(status, text) {
+      const indicator = document.getElementById('syncIndicator');
+      const statusIcon = document.getElementById('syncStatusIcon');
+      const statusText = document.getElementById('syncStatusText');
+
+      indicator.className = 'sync-indicator ' + status;
+      statusText.textContent = text;
+
+      if (status === 'syncing') {
+        statusIcon.innerHTML = '<span class="spinner"></span>';
+      } else if (status === 'success') {
+        statusIcon.textContent = '✓';
+      } else if (status === 'error') {
+        statusIcon.textContent = '✗';
+      } else {
+        statusIcon.textContent = '●';
       }
     }
 
