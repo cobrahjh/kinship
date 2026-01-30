@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.KinshipCompanion" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#2563eb</item>
+        <item name="colorPrimaryVariant">#1d4ed8</item>
+        <item name="colorOnPrimary">#ffffff</item>
+        <item name="colorSecondary">#7c3aed</item>
+        <item name="colorSecondaryVariant">#6d28d9</item>
+        <item name="colorOnSecondary">#ffffff</item>
+        <item name="android:statusBarColor">#0f172a</item>
+        <item name="android:navigationBarColor">#0f172a</item>
+        <item name="android:windowBackground">#0f172a</item>
+    </style>
+</resources>

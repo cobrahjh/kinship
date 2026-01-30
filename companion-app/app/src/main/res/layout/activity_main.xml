@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0f172a">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Header -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Kinship Companion"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#f8fafc"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Connect your Samsung Watch to Kinship"
+            android:textSize="14sp"
+            android:textColor="#94a3b8"
+            android:layout_marginBottom="32dp" />
+
+        <!-- Connection Status Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_background"
+            android:padding="20dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Connection Status"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#f8fafc"
+                android:layout_marginBottom="16dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <View
+                    android:id="@+id/statusIndicator"
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:background="@drawable/status_dot"
+                    android:layout_marginEnd="12dp" />
+
+                <TextView
+                    android:id="@+id/txtStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Checking..."
+                    android:textSize="16sp"
+                    android:textColor="#f8fafc" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Server Settings Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_background"
+            android:padding="20dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Server Settings"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#f8fafc"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Kinship Server URL"
+                android:textSize="12sp"
+                android:textColor="#94a3b8"
+                android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/editServerUrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="http://192.168.1.100:8766"
+                android:textColor="#f8fafc"
+                android:textColorHint="#64748b"
+                android:background="@drawable/edit_background"
+                android:padding="14dp"
+                android:inputType="textUri"
+                android:layout_marginBottom="12dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnSaveUrl"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="Save"
+                    android:textColor="#fff"
+                    android:background="@drawable/button_primary"
+                    android:layout_marginEnd="8dp" />
+
+                <Button
+                    android:id="@+id/btnTestConnection"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="Test"
+                    android:textColor="#93c5fd"
+                    android:background="@drawable/button_secondary" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Sync Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_background"
+            android:padding="20dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sync"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#f8fafc"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Activity data syncs automatically every 15 minutes when connected to the server."
+                android:textSize="13sp"
+                android:textColor="#94a3b8"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/btnSyncNow"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Sync Now"
+                android:textColor="#fff"
+                android:background="@drawable/button_primary" />
+
+        </LinearLayout>
+
+        <!-- Instructions Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_background"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="How it works"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#f8fafc"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1. Voice recordings from your watch are automatically uploaded to Kinship\n\n2. Activity data (steps, calories, heart rate) syncs in the background\n\n3. Your voice journal entries are enriched with activity context"
+                android:textSize="13sp"
+                android:textColor="#94a3b8"
+                android:lineSpacingExtra="4dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
