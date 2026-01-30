@@ -1,21 +1,49 @@
 {
   "name": "Kinship",
   "short_name": "Kinship",
-  "description": "Your AI Memory Companion",
+  "description": "Your AI Memory Companion - capture voice notes, track moods, and gain insights",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0f172a",
   "theme_color": "#2563eb",
+  "categories": ["productivity", "health", "lifestyle"],
   "icons": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icon.svg",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Voice Note",
+      "short_name": "Record",
+      "description": "Capture a new voice note",
+      "url": "/?tab=capture",
+      "icons": [{"src": "/icon.svg", "sizes": "96x96"}]
+    },
+    {
+      "name": "Search Memories",
+      "short_name": "Search",
+      "description": "Search your past entries",
+      "url": "/?tab=search",
+      "icons": [{"src": "/icon.svg", "sizes": "96x96"}]
+    },
+    {
+      "name": "Today's Digest",
+      "short_name": "Digest",
+      "description": "View your daily digest",
+      "url": "/?tab=digest",
+      "icons": [{"src": "/icon.svg", "sizes": "96x96"}]
     }
   ]
 }

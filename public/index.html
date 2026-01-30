@@ -2,12 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#2563eb">
+  <meta name="description" content="Your AI Memory Companion - capture voice notes, track moods, and gain insights">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Kinship">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
   <title>Kinship</title>
   <link rel="manifest" href="/manifest.json">
-  <link rel="apple-touch-icon" href="/icon-192.png">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="/icon.svg">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; min-height: 100vh; }
@@ -158,6 +164,71 @@
 
     /* Settings Button */
     #settingsBtn:hover { background: rgba(255,255,255,0.3); transform: rotate(45deg); }
+
+    /* ============ MOBILE PWA OPTIMIZATIONS ============ */
+
+    /* Safe area handling for notched devices */
+    body {
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    .container {
+      padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    }
+
+    /* Touch feedback */
+    button, .tab-btn, .ctx-btn, .mood-btn, .entry-actions button {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    button:active, .tab-btn:active, .ctx-btn:active {
+      transform: scale(0.96);
+      opacity: 0.9;
+    }
+
+    /* Minimum touch targets (44px) */
+    .tab-btn { min-height: 44px; }
+    .ctx-btn { min-height: 44px; min-width: 44px; }
+    .entry-actions button { min-width: 44px; min-height: 44px; padding: 10px 14px; }
+    #settingsBtn { min-width: 44px; min-height: 44px; }
+
+    /* Responsive breakpoints */
+    @media (max-width: 360px) {
+      .container { padding: 12px; }
+      .header { padding: 24px 16px; border-radius: 16px; }
+      .header h1 { font-size: 26px; }
+      .card { padding: 16px; }
+      .record-btn { width: 120px; height: 120px; }
+      .mood-buttons { gap: 8px; }
+      .mood-btn { width: 48px; height: 48px; }
+      .mood-emoji { font-size: 22px; }
+      .week-days { gap: 4px; }
+      .day-dot { width: 28px; height: 28px; font-size: 12px; }
+    }
+
+    @media (min-width: 600px) and (max-width: 900px) {
+      .container { max-width: 700px; }
+      .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (min-width: 900px) {
+      .container { max-width: 800px; }
+      .stats-grid { grid-template-columns: repeat(3, 1fr); }
+      .header { border-radius: 28px; }
+    }
+
+    /* Landscape orientation */
+    @media (orientation: landscape) and (max-height: 500px) {
+      .header { padding: 20px; margin-bottom: 16px; }
+      .record-section { padding: 20px; }
+      .record-btn { width: 100px; height: 100px; }
+      .record-btn .icon { font-size: 32px; }
+    }
+
+    /* Standalone PWA mode adjustments */
+    @media (display-mode: standalone) {
+      .header { padding-top: 20px; }
+    }
   </style>
 </head>
 <body>
@@ -1377,6 +1448,13 @@
 
     // Check for fresh start after a brief delay
     setTimeout(showFreshStartIfNeeded, 500);
+
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('SW registered:', reg.scope))
+        .catch(err => console.warn('SW registration failed:', err));
+    }
   </script>
 </body>
 </html>
