@@ -4,6 +4,7 @@ import android.content.Intent
 import android.util.Log
 import com.google.android.gms.wearable.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.tasks.await
 
 /**
  * Service that receives data from the Samsung/Wear OS watch
@@ -101,7 +102,7 @@ class WearableListenerService : com.google.android.gms.wearable.WearableListener
             scope.launch {
                 try {
                     val client = Wearable.getDataClient(applicationContext)
-                    val inputStream = Tasks.await(client.getFdForAsset(audioAsset)).inputStream
+                    val inputStream = client.getFdForAsset(audioAsset).await().inputStream
                     val audioData = inputStream.readBytes()
                     inputStream.close()
 
@@ -163,9 +164,4 @@ class WearableListenerService : com.google.android.gms.wearable.WearableListener
     }
 }
 
-// Extension to use Tasks.await in coroutines
-private object Tasks {
-    suspend fun <T> await(task: com.google.android.gms.tasks.Task<T>): T {
-        return kotlinx.coroutines.tasks.await(task)
-    }
-}
+// Use kotlinx.coroutines.tasks.await imported above
