@@ -17,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.wearable.Wearable
 import com.kinship.watch.databinding.ActivityMainBinding
 import kotlinx.coroutines.*
+import kotlinx.coroutines.tasks.await
 import java.io.ByteArrayOutputStream
 
 class MainActivity : AppCompatActivity() {
@@ -144,7 +145,7 @@ class MainActivity : AppCompatActivity() {
 
             // Get connected nodes (phones)
             val nodeClient = Wearable.getNodeClient(this)
-            val nodes = kotlinx.coroutines.tasks.await(nodeClient.connectedNodes)
+            val nodes = nodeClient.connectedNodes.await()
 
             if (nodes.isEmpty()) {
                 withContext(Dispatchers.Main) {
@@ -159,9 +160,7 @@ class MainActivity : AppCompatActivity() {
 
             for (node in nodes) {
                 try {
-                    kotlinx.coroutines.tasks.await(
-                        messageClient.sendMessage(node.id, AUDIO_PATH, audioData)
-                    )
+                    messageClient.sendMessage(node.id, AUDIO_PATH, audioData).await()
                     Log.d(TAG, "Sent ${audioData.size} bytes to ${node.displayName}")
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to send to ${node.displayName}", e)
