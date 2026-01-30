@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#2563eb">
+  <title>Shared Memory - Kinship</title>
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      min-height: 100vh;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      text-align: center;
+      padding: 24px 20px;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      border-radius: 20px;
+      margin-bottom: 24px;
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .header p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 24px;
+      flex: 1;
+    }
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #334155;
+    }
+    .context {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      background: #334155;
+    }
+    .timestamp {
+      font-size: 13px;
+      color: #64748b;
+    }
+    .transcript {
+      font-size: 16px;
+      line-height: 1.7;
+      margin-bottom: 20px;
+      white-space: pre-wrap;
+    }
+    .summary {
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+      border-left: 3px solid #2563eb;
+    }
+    .summary-label {
+      font-size: 12px;
+      color: #64748b;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .tag {
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 13px;
+      background: #334155;
+    }
+    .tag.mood { background: #1e3a5f; color: #93c5fd; }
+    .tag.positive { background: #14532d; color: #86efac; }
+    .tag.negative { background: #7f1d1d; color: #fca5a5; }
+    .tag.neutral { background: #3f3f46; color: #d4d4d8; }
+    .footer {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid #334155;
+      text-align: center;
+      color: #64748b;
+      font-size: 13px;
+    }
+    .footer a {
+      color: #3b82f6;
+      text-decoration: none;
+    }
+    .error {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    .error-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    .error h2 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+    .error p {
+      color: #64748b;
+    }
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #64748b;
+    }
+    .views {
+      font-size: 12px;
+      color: #64748b;
+      text-align: right;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Kinship</h1>
+      <p>Shared Memory</p>
+    </div>
+
+    <div class="card" id="content">
+      <div class="loading" id="loading">Loading shared memory...</div>
+    </div>
+  </div>
+
+  <script>
+    async function loadSharedEntry() {
+      const token = window.location.pathname.split('/').pop();
+      const content = document.getElementById('content');
+
+      try {
+        const res = await fetch(`/api/share/${token}`);
+
+        if (!res.ok) {
+          const err = await res.json();
+          content.innerHTML = `
+            <div class="error">
+              <div class="error-icon">${res.status === 410 ? '⏰' : '🔒'}</div>
+              <h2>${res.status === 410 ? 'Link Expired' : 'Not Found'}</h2>
+              <p>${err.error || 'This shared memory is no longer available.'}</p>
+            </div>
+          `;
+          return;
+        }
+
+        const entry = await res.json();
+
+        const contextEmojis = { auto: '📝', health: '🏥', idea: '💡', personal: '🏠', work: '💼' };
+        const contextEmoji = contextEmojis[entry.context] || '📝';
+
+        const timestamp = new Date(entry.timestamp).toLocaleString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit'
+        });
+
+        let html = `
+          <div class="meta">
+            <span class="context">${contextEmoji} ${entry.context}</span>
+            <span class="timestamp">${timestamp}</span>
+          </div>
+        `;
+
+        if (entry.transcript) {
+          html += `<div class="transcript">${entry.transcript}</div>`;
+        }
+
+        if (entry.summary) {
+          html += `
+            <div class="summary">
+              <div class="summary-label">Summary</div>
+              <div>${entry.summary}</div>
+            </div>
+          `;
+        }
+
+        if (entry.mood || entry.sentiment || (entry.topics && entry.topics.length)) {
+          html += '<div class="tags">';
+          if (entry.mood) {
+            html += `<span class="tag mood">${entry.mood}</span>`;
+          }
+          if (entry.sentiment) {
+            html += `<span class="tag ${entry.sentiment}">${entry.sentiment}</span>`;
+          }
+          if (entry.topics) {
+            entry.topics.forEach(t => {
+              html += `<span class="tag">${t}</span>`;
+            });
+          }
+          html += '</div>';
+        }
+
+        html += `
+          <div class="footer">
+            <p>Shared via <a href="/">Kinship</a> - Your AI Memory Companion</p>
+          </div>
+          <div class="views">Viewed ${entry.shareViewCount} time${entry.shareViewCount !== 1 ? 's' : ''}</div>
+        `;
+
+        content.innerHTML = html;
+
+      } catch (e) {
+        console.error('Failed to load shared entry:', e);
+        content.innerHTML = `
+          <div class="error">
+            <div class="error-icon">⚠️</div>
+            <h2>Error</h2>
+            <p>Failed to load shared memory. Please try again later.</p>
+          </div>
+        `;
+      }
+    }
+
+    loadSharedEntry();
+  </script>
+</body>
+</html>

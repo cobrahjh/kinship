@@ -487,6 +487,57 @@
     </div>
   </div>
 
+  <!-- Share Modal -->
+  <div class="modal-overlay" id="shareModal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px; text-align: left;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="font-size: 20px;">Share Entry</h2>
+        <button onclick="closeShareModal()" style="background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer;">&times;</button>
+      </div>
+
+      <div id="shareContent">
+        <div style="background: #0f172a; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+          <p id="shareSummary" style="color: #94a3b8; font-size: 14px; margin-bottom: 8px;"></p>
+          <p id="shareTimestamp" style="color: #64748b; font-size: 12px;"></p>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <span>Enable sharing</span>
+          <label style="position: relative; display: inline-block; width: 50px; height: 28px;">
+            <input type="checkbox" id="shareToggle" onchange="toggleShare()" style="opacity: 0; width: 0; height: 0;">
+            <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; border-radius: 28px; transition: 0.3s;"></span>
+            <span id="shareToggleKnob" style="position: absolute; content: ''; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; border-radius: 50%; transition: 0.3s;"></span>
+          </label>
+        </div>
+
+        <div id="shareOptions" style="display: none;">
+          <div style="margin-bottom: 16px;">
+            <label style="font-size: 14px; color: #94a3b8; display: block; margin-bottom: 8px;">Link expires</label>
+            <select id="shareExpiry" onchange="updateShareExpiry()" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px;">
+              <option value="0">Never</option>
+              <option value="7">In 7 days</option>
+              <option value="30">In 30 days</option>
+              <option value="90">In 90 days</option>
+            </select>
+          </div>
+
+          <div style="background: #0f172a; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="shareUrl" readonly style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #f8fafc; font-size: 13px;">
+              <button onclick="copyShareLink()" style="padding: 8px 16px; background: #2563eb; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 13px;">Copy</button>
+            </div>
+            <p id="shareCopyStatus" style="font-size: 12px; color: #64748b; margin-top: 8px; text-align: center;"></p>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; font-size: 13px; color: #64748b;">
+            <span>Views: <span id="shareViewCount">0</span></span>
+            <span id="shareExpiryText"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     let recording = false;
     let mediaRecorder = null;
@@ -714,6 +765,7 @@
             <div class="entry-actions">
               ${!e.transcript && e.audioPath ? `<button class="entry-btn transcribe" onclick="transcribeEntry(${e.id})">Transcribe</button>` : ''}
               ${e.transcript && !e.summary ? `<button class="entry-btn analyze" onclick="analyzeEntry(${e.id})">Analyze</button>` : ''}
+              <button class="entry-btn share" onclick="openShareModal(${e.id})">Share</button>
               <button class="entry-btn delete" onclick="deleteEntry(${e.id})">Delete</button>
             </div>
           </div>
@@ -1348,6 +1400,139 @@
     function closeSettings() {
       document.getElementById('settingsModal').style.display = 'none';
     }
+
+    // ============ SHARING FUNCTIONS ============
+
+    let currentShareEntryId = null;
+
+    async function openShareModal(entryId) {
+      currentShareEntryId = entryId;
+      document.getElementById('shareModal').style.display = 'flex';
+
+      // Get entry details
+      const entries = await fetch('/api/lifelog/entries').then(r => r.json());
+      const entry = entries.find(e => e.id === entryId);
+
+      if (entry) {
+        document.getElementById('shareSummary').textContent = entry.summary || entry.transcript || 'Voice note';
+        document.getElementById('shareTimestamp').textContent = formatTime(entry.timestamp);
+      }
+
+      // Get share status
+      try {
+        const status = await fetch(`/api/lifelog/entries/${entryId}/share`).then(r => r.json());
+
+        const toggle = document.getElementById('shareToggle');
+        const knob = document.getElementById('shareToggleKnob');
+        const options = document.getElementById('shareOptions');
+
+        toggle.checked = status.shared;
+        if (status.shared) {
+          knob.style.transform = 'translateX(22px)';
+          knob.parentElement.previousElementSibling.nextElementSibling.style.backgroundColor = '#2563eb';
+          options.style.display = 'block';
+          document.getElementById('shareUrl').value = window.location.origin + status.shareUrl;
+          document.getElementById('shareViewCount').textContent = status.shareViewCount || 0;
+          document.getElementById('shareExpiryText').textContent = status.shareExpiresAt
+            ? `Expires ${new Date(status.shareExpiresAt).toLocaleDateString()}`
+            : '';
+        } else {
+          knob.style.transform = 'translateX(0)';
+          knob.parentElement.previousElementSibling.nextElementSibling.style.backgroundColor = '#334155';
+          options.style.display = 'none';
+        }
+      } catch (e) {
+        console.error('Failed to load share status:', e);
+      }
+    }
+
+    function closeShareModal() {
+      document.getElementById('shareModal').style.display = 'none';
+      currentShareEntryId = null;
+      document.getElementById('shareCopyStatus').textContent = '';
+    }
+
+    async function toggleShare() {
+      const toggle = document.getElementById('shareToggle');
+      const knob = document.getElementById('shareToggleKnob');
+      const options = document.getElementById('shareOptions');
+      const enabled = toggle.checked;
+
+      // Update toggle visual
+      if (enabled) {
+        knob.style.transform = 'translateX(22px)';
+        knob.parentElement.previousElementSibling.nextElementSibling.style.backgroundColor = '#2563eb';
+      } else {
+        knob.style.transform = 'translateX(0)';
+        knob.parentElement.previousElementSibling.nextElementSibling.style.backgroundColor = '#334155';
+      }
+
+      try {
+        const expiresIn = parseInt(document.getElementById('shareExpiry').value) || 0;
+        const res = await fetch(`/api/lifelog/entries/${currentShareEntryId}/share`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled, expiresIn })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          if (enabled) {
+            options.style.display = 'block';
+            document.getElementById('shareUrl').value = window.location.origin + data.shareUrl;
+            document.getElementById('shareViewCount').textContent = '0';
+            document.getElementById('shareExpiryText').textContent = data.expiresAt
+              ? `Expires ${new Date(data.expiresAt).toLocaleDateString()}`
+              : '';
+          } else {
+            options.style.display = 'none';
+          }
+        }
+      } catch (e) {
+        console.error('Failed to toggle share:', e);
+        alert('Failed to update sharing');
+      }
+    }
+
+    async function updateShareExpiry() {
+      if (!document.getElementById('shareToggle').checked) return;
+
+      const expiresIn = parseInt(document.getElementById('shareExpiry').value) || 0;
+      try {
+        const res = await fetch(`/api/lifelog/entries/${currentShareEntryId}/share`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: true, expiresIn })
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('shareExpiryText').textContent = data.expiresAt
+            ? `Expires ${new Date(data.expiresAt).toLocaleDateString()}`
+            : '';
+        }
+      } catch (e) {
+        console.error('Failed to update expiry:', e);
+      }
+    }
+
+    function copyShareLink() {
+      const url = document.getElementById('shareUrl').value;
+      navigator.clipboard.writeText(url).then(() => {
+        document.getElementById('shareCopyStatus').textContent = 'Link copied!';
+        document.getElementById('shareCopyStatus').style.color = '#22c55e';
+        setTimeout(() => {
+          document.getElementById('shareCopyStatus').textContent = '';
+        }, 2000);
+      }).catch(() => {
+        document.getElementById('shareCopyStatus').textContent = 'Failed to copy';
+        document.getElementById('shareCopyStatus').style.color = '#ef4444';
+      });
+    }
+
+    // Close share modal on overlay click
+    document.getElementById('shareModal').addEventListener('click', (e) => {
+      if (e.target.id === 'shareModal') closeShareModal();
+    });
 
     async function embedAll() {
       if (!confirm('This will generate embeddings for all entries without them. Continue?')) return;

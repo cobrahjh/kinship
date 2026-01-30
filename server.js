@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const serveIndex = require('serve-index');
 const OpenAI = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
@@ -725,6 +726,131 @@ app.delete('/api/lifelog/entries/:id', (req, res) => {
   entries.splice(idx, 1);
   saveEntries();
   res.json({ success: true });
+});
+
+// ============ SHARING FEATURES ============
+
+// Generate a secure share token
+function generateShareToken() {
+  return crypto.randomBytes(16).toString('hex');
+}
+
+// Enable/disable sharing for an entry
+app.post('/api/lifelog/entries/:id/share', (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const entry = entries.find(e => e.id === id);
+    if (!entry) return res.status(404).json({ error: 'Entry not found' });
+
+    const { enabled, expiresIn } = req.body;
+
+    if (enabled) {
+      // Enable sharing
+      if (!entry.shareToken) {
+        entry.shareToken = generateShareToken();
+      }
+      entry.shared = true;
+      entry.shareCreatedAt = new Date().toISOString();
+      entry.shareViewCount = entry.shareViewCount || 0;
+
+      // Set expiration if specified (days)
+      if (expiresIn && expiresIn > 0) {
+        const expires = new Date();
+        expires.setDate(expires.getDate() + expiresIn);
+        entry.shareExpiresAt = expires.toISOString();
+      } else {
+        entry.shareExpiresAt = null;
+      }
+    } else {
+      // Disable sharing
+      entry.shared = false;
+    }
+
+    saveEntries();
+    log(`Entry ${id} sharing ${enabled ? 'enabled' : 'disabled'}`);
+
+    res.json({
+      success: true,
+      shared: entry.shared,
+      shareToken: entry.shared ? entry.shareToken : null,
+      shareUrl: entry.shared ? `/share/${entry.shareToken}` : null,
+      expiresAt: entry.shareExpiresAt
+    });
+  } catch (err) {
+    log(`Share toggle error: ${err.message}`, 'ERROR');
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get share status for an entry
+app.get('/api/lifelog/entries/:id/share', (req, res) => {
+  const id = parseInt(req.params.id);
+  const entry = entries.find(e => e.id === id);
+  if (!entry) return res.status(404).json({ error: 'Entry not found' });
+
+  res.json({
+    shared: entry.shared || false,
+    shareToken: entry.shared ? entry.shareToken : null,
+    shareUrl: entry.shared ? `/share/${entry.shareToken}` : null,
+    shareCreatedAt: entry.shareCreatedAt || null,
+    shareExpiresAt: entry.shareExpiresAt || null,
+    shareViewCount: entry.shareViewCount || 0
+  });
+});
+
+// List all shared entries
+app.get('/api/lifelog/shared', (req, res) => {
+  const sharedEntries = entries
+    .filter(e => e.shared)
+    .map(e => ({
+      id: e.id,
+      timestamp: e.timestamp,
+      summary: e.summary,
+      mood: e.mood,
+      shareToken: e.shareToken,
+      shareUrl: `/share/${e.shareToken}`,
+      shareCreatedAt: e.shareCreatedAt,
+      shareExpiresAt: e.shareExpiresAt,
+      shareViewCount: e.shareViewCount || 0
+    }));
+
+  res.json(sharedEntries);
+});
+
+// Public API to get shared entry data (no auth)
+app.get('/api/share/:token', (req, res) => {
+  const { token } = req.params;
+  const entry = entries.find(e => e.shareToken === token && e.shared);
+
+  if (!entry) {
+    return res.status(404).json({ error: 'Shared entry not found or link expired' });
+  }
+
+  // Check expiration
+  if (entry.shareExpiresAt && new Date(entry.shareExpiresAt) < new Date()) {
+    return res.status(410).json({ error: 'This share link has expired' });
+  }
+
+  // Increment view count
+  entry.shareViewCount = (entry.shareViewCount || 0) + 1;
+  saveEntries();
+
+  // Return filtered entry data (no sensitive fields)
+  res.json({
+    timestamp: entry.timestamp,
+    context: entry.context,
+    transcript: entry.transcript,
+    summary: entry.summary,
+    sentiment: entry.sentiment,
+    mood: entry.mood,
+    topics: entry.topics,
+    shareViewCount: entry.shareViewCount
+  });
+});
+
+// Serve public share page
+app.get('/share/:token', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'share.html'));
 });
 
 // ============ BEHAVIORAL FEATURES ============

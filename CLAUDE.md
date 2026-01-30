@@ -38,6 +38,13 @@ AI-generated reflections on your entries:
 - **Daily**: Title, narrative, mood, highlights, action items, reflection
 - **Weekly**: Themes, wins, challenges, patterns noticed, week ahead intention
 
+### Sharing
+Share individual entries with others:
+- Generate secure share links with optional expiry (1h, 24h, 7d, 30d, or never)
+- Public share page displays entry content without requiring login
+- View count tracking for shared links
+- Revoke access anytime by disabling the share
+
 ---
 
 ## Project Structure
@@ -49,6 +56,7 @@ C:\kinship\
 ├── CLAUDE.md           # This documentation
 ├── public/
 │   ├── index.html      # Main dashboard (Capture, Journal, Search, Digest tabs)
+│   ├── share.html      # Public share page for shared entries
 │   └── manifest.json   # PWA manifest
 ├── plugins/
 │   └── exercise/       # Future: Exercise tracking plugin
@@ -81,6 +89,15 @@ C:\kinship\
 | GET | `/api/lifelog/digest/:date` | Get daily digest (add ?ai=true for AI narrative) |
 | GET | `/api/lifelog/digest/week/:date` | Get weekly digest (any date in week, ?ai=true for AI) |
 | GET | `/api/lifelog/patterns` | Pattern detection (?days=30, ?ai=true for insights) |
+
+### Sharing
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/lifelog/entries/:id/share` | Toggle sharing (body: `{enabled, expiresIn}`) |
+| GET | `/api/lifelog/entries/:id/share` | Get share status for an entry |
+| GET | `/api/lifelog/shared` | List all shared entries |
+| GET | `/api/share/:token` | Public: get shared entry data |
+| GET | `/share/:token` | Public: share page |
 
 ### System
 | Method | Endpoint | Description |
@@ -141,11 +158,11 @@ Features:
 - [x] Weekly digests (themes, wins, challenges, patterns, week ahead)
 - [x] Semantic search with embeddings (OpenAI text-embedding-3-small)
 - [x] Pattern detection
-- [ ] Plugin system for exercise, etc.
+- [x] Plugin system for exercise, etc.
 
 ### Phase 4
 - [ ] Family sharing
-- [ ] Mobile PWA optimization
+- [x] Mobile PWA optimization
 - [ ] Wearable integration
 
 ---
