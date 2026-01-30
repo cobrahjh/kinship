@@ -572,7 +572,9 @@
       <p style="color: #94a3b8; margin-bottom: 16px;">Share this code with family members:</p>
 
       <div class="qr-container" id="qrCodeContainer">
-        <canvas id="qrCodeCanvas"></canvas>
+        <div id="qrCodeDisplay" style="width: 180px; height: 180px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+          <span style="color: #64748b;">Loading QR...</span>
+        </div>
         <p style="color: #64748b; font-size: 12px; margin-top: 8px;">Scan with phone camera</p>
       </div>
 
@@ -761,8 +763,6 @@
     </div>
   </div>
 
-  <!-- QR Code Library -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <script>
     let recording = false;
     let mediaRecorder = null;
@@ -2277,14 +2277,11 @@
 
         document.getElementById('inviteModal').style.display = 'flex';
 
-        // Generate QR code
+        // Generate QR code using Google Charts API (reliable fallback)
         const inviteUrl = `${window.location.origin}/join-family?code=${data.inviteCode}`;
-        if (typeof QRCode !== 'undefined') {
-          const canvas = document.getElementById('qrCodeCanvas');
-          QRCode.toCanvas(canvas, inviteUrl, { width: 180, margin: 2 }, (error) => {
-            if (error) console.error('QR code error:', error);
-          });
-        }
+        const qrContainer = document.getElementById('qrCodeDisplay');
+        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(inviteUrl)}`;
+        qrContainer.innerHTML = `<img src="${qrApiUrl}" alt="QR Code" style="border-radius: 8px;" onerror="this.parentElement.innerHTML='<span style=\\'color:#64748b;\\'>QR unavailable</span>'">`;
       } catch (e) {
         alert('Error generating invite');
       }
