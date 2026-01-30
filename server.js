@@ -476,8 +476,20 @@ app.post('/api/lifelog/ingest', upload.single('audio'), (req, res) => {
     saveEntries();
     log(`New entry saved: id=${entry.id}, audio=${hasAudio ? 'yes' : 'no'}`);
 
-    // Call plugin hooks for new entry
-    callHook('onEntryCreated', entry).catch(err => {
+    // Call plugin hooks for new entry and process context attachments
+    callHook('onEntryCreated', entry).then(hookResults => {
+      for (const hookResult of hookResults) {
+        if (hookResult.result?.attachContext && hookResult.result?.context) {
+          entry.wearableContext = {
+            attached: true,
+            attachedAt: new Date().toISOString(),
+            snapshot: hookResult.result.context
+          };
+          saveEntries();
+          log(`Attached wearable context to entry ${entry.id}`);
+        }
+      }
+    }).catch(err => {
       log(`Hook onEntryCreated error: ${err.message}`, 'ERROR');
     });
 
@@ -1587,8 +1599,20 @@ app.post('/api/lifelog/mood', (req, res) => {
     saveEntries();
     log(`Quick mood entry: ${mood} (${sentimentScore})`);
 
-    // Call plugin hooks
-    callHook('onEntryCreated', entry).catch(err => {
+    // Call plugin hooks and process context attachments
+    callHook('onEntryCreated', entry).then(hookResults => {
+      for (const hookResult of hookResults) {
+        if (hookResult.result?.attachContext && hookResult.result?.context) {
+          entry.wearableContext = {
+            attached: true,
+            attachedAt: new Date().toISOString(),
+            snapshot: hookResult.result.context
+          };
+          saveEntries();
+          log(`Attached wearable context to entry ${entry.id}`);
+        }
+      }
+    }).catch(err => {
       log(`Hook onEntryCreated error: ${err.message}`, 'ERROR');
     });
 

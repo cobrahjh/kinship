@@ -318,6 +318,163 @@
     @media (display-mode: standalone) {
       .header { padding-top: 20px; }
     }
+
+    /* Wearable Tab Styles */
+    .wearable-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: #0f172a;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .status-dot.connected { background: #22c55e; }
+    .status-dot.disconnected { background: #64748b; }
+
+    .activity-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .activity-stat {
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      position: relative;
+    }
+
+    .activity-stat .stat-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .activity-stat .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #3b82f6;
+    }
+
+    .activity-stat .stat-label {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    .progress-ring {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: conic-gradient(#22c55e var(--progress, 0%), #334155 0);
+    }
+
+    .weekly-chart {
+      height: 120px;
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      padding: 8px 0;
+      margin-bottom: 12px;
+    }
+
+    .weekly-chart .bar-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .weekly-chart .bar {
+      width: 100%;
+      background: linear-gradient(to top, #3b82f6, #8b5cf6);
+      border-radius: 4px 4px 0 0;
+      min-height: 4px;
+      transition: height 0.3s;
+    }
+
+    .weekly-chart .bar-label {
+      font-size: 10px;
+      color: #64748b;
+    }
+
+    .weekly-stats {
+      display: flex;
+      justify-content: space-around;
+      padding-top: 12px;
+      border-top: 1px solid #334155;
+    }
+
+    .weekly-stat {
+      text-align: center;
+    }
+
+    .weekly-stat-value {
+      display: block;
+      font-size: 18px;
+      font-weight: 600;
+      color: #3b82f6;
+    }
+
+    .weekly-stat-label {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .goals-form {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .goal-input {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .goal-input label {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .goal-input input {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #f8fafc;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .entry-wearable {
+      margin-top: 8px;
+      padding: 6px 10px;
+      background: #1e3a5f;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #93c5fd;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .entry-wearable-icon {
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -357,6 +514,7 @@
       <button class="tab-btn" onclick="showTab('digest')">Digest</button>
       <button class="tab-btn" onclick="showTab('patterns')">Patterns</button>
       <button class="tab-btn" id="familyTabBtn" onclick="showTab('family')" style="display: none; position: relative;">Family<span class="unread-badge" id="familyUnreadBadge" style="display: none;">0</span></button>
+      <button class="tab-btn" id="wearableTabBtn" onclick="showTab('wearable')">Wearable</button>
     </div>
 
     <div id="captureTab">
@@ -653,6 +811,109 @@
       </div>
     </div>
 
+    <!-- Wearable Tab -->
+    <div id="wearableTab" style="display: none;">
+      <!-- Connection Status Card -->
+      <div class="section-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3>Samsung Watch</h3>
+          <div class="wearable-status" id="wearableStatus">
+            <span class="status-dot disconnected" id="wearableStatusDot"></span>
+            <span id="wearableStatusText">Not connected</span>
+          </div>
+        </div>
+
+        <div id="wearableImportSection">
+          <p style="color: #94a3b8; margin-bottom: 16px; font-size: 14px;">Import your Samsung Health data to enrich your voice journal with activity context.</p>
+          <input type="file" id="samsungImportFile" accept=".json" style="display: none;" onchange="handleWearableImport(event)">
+          <button onclick="document.getElementById('samsungImportFile').click()" class="action-btn" style="width: 100%; background: linear-gradient(135deg, #2563eb, #7c3aed);">
+            Import Samsung Health JSON
+          </button>
+          <p style="font-size: 12px; color: #64748b; margin-top: 12px;" id="lastImportText">No data imported yet</p>
+        </div>
+      </div>
+
+      <!-- Today's Activity Card -->
+      <div class="section-card" id="todayActivityCard">
+        <h3 style="margin-bottom: 16px;">Today's Activity</h3>
+        <div class="activity-grid">
+          <div class="activity-stat">
+            <div class="stat-icon">👟</div>
+            <div class="stat-value" id="todaySteps">--</div>
+            <div class="stat-label">Steps</div>
+            <div class="progress-ring" id="stepsProgress" style="--progress: 0%;"></div>
+          </div>
+          <div class="activity-stat">
+            <div class="stat-icon">🔥</div>
+            <div class="stat-value" id="todayCalories">--</div>
+            <div class="stat-label">Calories</div>
+            <div class="progress-ring" id="caloriesProgress" style="--progress: 0%;"></div>
+          </div>
+          <div class="activity-stat">
+            <div class="stat-icon">⏱️</div>
+            <div class="stat-value" id="todayActiveMinutes">--</div>
+            <div class="stat-label">Active Min</div>
+            <div class="progress-ring" id="activeProgress" style="--progress: 0%;"></div>
+          </div>
+          <div class="activity-stat">
+            <div class="stat-icon">📏</div>
+            <div class="stat-value" id="todayDistance">--</div>
+            <div class="stat-label">Distance (km)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly Overview Card -->
+      <div class="section-card">
+        <h3 style="margin-bottom: 16px;">This Week</h3>
+        <div class="weekly-chart" id="weeklyActivityChart">
+          <!-- Bar chart rendered by JS -->
+        </div>
+        <div class="weekly-stats" id="weeklyStats">
+          <div class="weekly-stat">
+            <span class="weekly-stat-value" id="weekAvgSteps">--</span>
+            <span class="weekly-stat-label">avg steps/day</span>
+          </div>
+          <div class="weekly-stat">
+            <span class="weekly-stat-value" id="weekTotalActive">--</span>
+            <span class="weekly-stat-label">total active min</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Goals Card -->
+      <div class="section-card">
+        <h3 style="margin-bottom: 16px;">Activity Goals</h3>
+        <div class="goals-form">
+          <div class="goal-input">
+            <label>Daily Steps</label>
+            <input type="number" id="goalSteps" value="10000" min="1000" max="50000" step="500">
+          </div>
+          <div class="goal-input">
+            <label>Active Minutes</label>
+            <input type="number" id="goalActiveMinutes" value="30" min="10" max="180" step="5">
+          </div>
+          <div class="goal-input">
+            <label>Calories</label>
+            <input type="number" id="goalCalories" value="2000" min="1000" max="5000" step="100">
+          </div>
+          <button onclick="saveWearableGoals()" class="action-btn" style="width: 100%; margin-top: 12px; background: #2563eb;">Save Goals</button>
+        </div>
+      </div>
+
+      <!-- Import Help -->
+      <div class="section-card" style="background: #1e293b;">
+        <h4 style="margin-bottom: 12px; color: #94a3b8;">How to export Samsung Health data</h4>
+        <ol style="color: #64748b; font-size: 13px; padding-left: 20px; line-height: 1.8;">
+          <li>Open Samsung Health app on your phone</li>
+          <li>Go to Settings → Download Personal Data</li>
+          <li>Request data export (may take a few days)</li>
+          <li>Download and extract the ZIP file</li>
+          <li>Import the JSON files from the /jsons/ folder</li>
+        </ol>
+      </div>
+    </div>
+
     <!-- Plugin Tabs Container -->
     <div id="pluginTabsContainer"></div>
   </div>
@@ -784,6 +1045,30 @@
 
   <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Voice Preview Modal -->
+  <div class="modal-overlay" id="voicePreviewModal" style="display: none;">
+    <div class="modal-content" style="max-width: 450px; text-align: left;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="font-size: 20px;">Preview Recording</h2>
+        <button onclick="closeVoicePreview()" style="background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer;">&times;</button>
+      </div>
+
+      <div id="voicePreviewContent">
+        <div style="text-align: center; padding: 20px;">
+          <div class="spinner" style="width: 30px; height: 30px; border: 3px solid #334155; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+          <p style="color: #64748b; margin-top: 12px;">Transcribing...</p>
+        </div>
+      </div>
+
+      <div id="voicePreviewActions" style="display: none; margin-top: 20px;">
+        <div style="display: flex; gap: 12px;">
+          <button onclick="discardRecording()" style="flex: 1; padding: 14px; background: #334155; border: none; border-radius: 10px; color: #f8fafc; font-size: 16px; cursor: pointer;">Discard</button>
+          <button onclick="confirmRecording()" style="flex: 1; padding: 14px; background: linear-gradient(135deg, #2563eb, #7c3aed); border: none; border-radius: 10px; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer;">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Settings Modal -->
   <div class="modal-overlay" id="settingsModal" style="display: none;">
@@ -1154,6 +1439,12 @@
               <div class="entry-meta">
                 ${e.sentiment ? `<span class="entry-tag ${e.sentiment}">${e.mood || e.sentiment}</span>` : ''}
                 ${e.topics ? e.topics.map(t => `<span class="entry-tag">${t}</span>`).join('') : ''}
+              </div>
+            ` : ''}
+            ${e.wearableContext?.snapshot ? `
+              <div class="entry-wearable">
+                <span class="entry-wearable-icon">⌚</span>
+                <span>${formatWearableContext(e.wearableContext)}</span>
               </div>
             ` : ''}
             <div class="entry-actions">
@@ -3021,12 +3312,170 @@
         loadFamilyGoals();
         renderFamilyMessages();
       }
+      if (tab === 'wearable') {
+        loadWearableData();
+      }
     };
 
     // Audio playback helper (used in journal entries)
     function playAudio(audioPath) {
       const audio = new Audio('/api/audio/' + audioPath);
       audio.play();
+    }
+
+    // ==================== WEARABLE FUNCTIONS ====================
+
+    async function loadWearableData() {
+      try {
+        const stats = await fetch('/api/plugins/wearable/stats').then(r => r.json());
+
+        // Update connection status
+        const statusDot = document.getElementById('wearableStatusDot');
+        const statusText = document.getElementById('wearableStatusText');
+        const lastImportText = document.getElementById('lastImportText');
+
+        if (stats.connected) {
+          statusDot.classList.remove('disconnected');
+          statusDot.classList.add('connected');
+          statusText.textContent = 'Connected';
+          if (stats.lastImport) {
+            lastImportText.textContent = `Last import: ${formatDate(stats.lastImport)}`;
+          }
+        } else {
+          statusDot.classList.add('disconnected');
+          statusDot.classList.remove('connected');
+          statusText.textContent = 'Not connected';
+        }
+
+        // Load today's activity
+        const today = await fetch('/api/plugins/wearable/today').then(r => r.json());
+        updateTodayActivity(today);
+
+        // Update goals inputs
+        if (stats.goals) {
+          document.getElementById('goalSteps').value = stats.goals.steps || 10000;
+          document.getElementById('goalActiveMinutes').value = stats.goals.activeMinutes || 30;
+          document.getElementById('goalCalories').value = stats.goals.calories || 2000;
+        }
+
+        // Load weekly chart
+        if (stats.weekly) {
+          renderWeeklyChart(stats.weekly);
+        }
+      } catch (err) {
+        console.error('Failed to load wearable data:', err);
+      }
+    }
+
+    function updateTodayActivity(data) {
+      const activity = data.activity || {};
+      const progress = data.progress || {};
+
+      document.getElementById('todaySteps').textContent = (activity.steps || 0).toLocaleString();
+      document.getElementById('todayCalories').textContent = (activity.calories || 0).toLocaleString();
+      document.getElementById('todayActiveMinutes').textContent = activity.activeMinutes || 0;
+      document.getElementById('todayDistance').textContent = (activity.distance || 0).toFixed(1);
+
+      // Update progress rings
+      document.getElementById('stepsProgress').style.setProperty('--progress', `${Math.min(100, (progress.steps || 0) * 100)}%`);
+      document.getElementById('caloriesProgress').style.setProperty('--progress', `${Math.min(100, (progress.calories || 0) * 100)}%`);
+      document.getElementById('activeProgress').style.setProperty('--progress', `${Math.min(100, (progress.activeMinutes || 0) * 100)}%`);
+    }
+
+    function renderWeeklyChart(weekly) {
+      const chart = document.getElementById('weeklyActivityChart');
+      const dailyData = weekly.dailyData || [];
+
+      const maxSteps = Math.max(...dailyData.map(d => d.steps), 1);
+
+      chart.innerHTML = dailyData.map(day => {
+        const height = Math.max(4, (day.steps / maxSteps) * 100);
+        return `
+          <div class="bar-container">
+            <div class="bar" style="height: ${height}px;" title="${day.steps.toLocaleString()} steps"></div>
+            <span class="bar-label">${day.dayName}</span>
+          </div>
+        `;
+      }).join('');
+
+      // Update weekly stats
+      document.getElementById('weekAvgSteps').textContent = (weekly.averages?.steps || 0).toLocaleString();
+      document.getElementById('weekTotalActive').textContent = weekly.totals?.activeMinutes || 0;
+    }
+
+    async function handleWearableImport(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      showToast('Importing data...', 'info');
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('source', 'samsung-health');
+
+        const response = await fetch('/api/plugins/wearable/import', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showToast(`Imported ${result.imported.days} days of activity data`, 'success');
+          loadWearableData();
+        } else {
+          showToast('Import failed: ' + result.error, 'warning');
+        }
+      } catch (err) {
+        console.error('Import error:', err);
+        showToast('Import error: ' + err.message, 'warning');
+      }
+
+      // Clear the file input
+      event.target.value = '';
+    }
+
+    async function saveWearableGoals() {
+      const goals = {
+        steps: parseInt(document.getElementById('goalSteps').value) || 10000,
+        activeMinutes: parseInt(document.getElementById('goalActiveMinutes').value) || 30,
+        calories: parseInt(document.getElementById('goalCalories').value) || 2000
+      };
+
+      try {
+        const response = await fetch('/api/plugins/wearable/goals', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(goals)
+        });
+
+        if (response.ok) {
+          showToast('Goals saved', 'success');
+          loadWearableData();
+        } else {
+          showToast('Failed to save goals', 'warning');
+        }
+      } catch (err) {
+        console.error('Save goals error:', err);
+        showToast('Error saving goals', 'warning');
+      }
+    }
+
+    // Helper to format wearable context in entries
+    function formatWearableContext(ctx) {
+      if (!ctx || !ctx.snapshot) return '';
+
+      const s = ctx.snapshot;
+      const parts = [];
+
+      if (s.stepsToday) parts.push(`${s.stepsToday.toLocaleString()} steps`);
+      if (s.activeMinutesToday) parts.push(`${s.activeMinutesToday} min active`);
+      if (s.lastExercise && s.lastExercise.minutesAgo < 120) {
+        parts.push(`${s.lastExercise.type} ${s.lastExercise.minutesAgo}m ago`);
+      }
+
+      return parts.join(' · ');
     }
   </script>
 </body>

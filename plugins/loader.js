@@ -104,15 +104,15 @@ function getPlugin(name) {
 /**
  * Call a hook on all plugins that implement it
  * @param {string} hookName - Name of the hook (e.g., 'onEntryCreated')
- * @param {any} data - Data to pass to the hook
+ * @param {...any} args - Arguments to pass to the hook
  */
-async function callHook(hookName, data) {
+async function callHook(hookName, ...args) {
   const results = [];
 
   for (const plugin of registry) {
     if (plugin.hooks && typeof plugin.hooks[hookName] === 'function') {
       try {
-        const result = await plugin.hooks[hookName](data);
+        const result = await plugin.hooks[hookName](...args);
         if (result !== undefined) {
           results.push({ plugin: plugin.name, result });
         }

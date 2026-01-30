@@ -63,16 +63,18 @@ C:\kinship\
 ├── package.json        # Dependencies (express, multer, openai, @anthropic-ai/sdk)
 ├── CLAUDE.md           # This documentation
 ├── public/
-│   ├── index.html      # Main dashboard (Capture, Journal, Search, Digest, Family tabs)
+│   ├── index.html      # Main dashboard (Capture, Journal, Search, Digest, Family, Wearable tabs)
 │   ├── share.html      # Public share page for shared entries
 │   ├── join-family.html # Family invite acceptance page
 │   └── manifest.json   # PWA manifest
 ├── plugins/
-│   └── exercise/       # Future: Exercise tracking plugin
+│   ├── wearable/       # Samsung Watch integration
+│   └── exercise/       # Exercise tracking plugin
 ├── data/
 │   ├── entries.json    # Voice note metadata + embeddings
 │   ├── family.json     # Identity and family configuration
 │   ├── family-feed.json # Cached entries from family members
+│   ├── wearable.json   # Wearable activity data
 │   └── audio/          # Audio recordings (webm)
 └── docs/
     ├── LIFELOG-CONSUMER-PRODUCT-SPEC.md
@@ -132,6 +134,18 @@ C:\kinship\
 | POST | `/api/sync/import` | Import family entries from sync folder |
 | GET | `/api/sync/status` | Get sync status |
 
+### Wearable (Plugin)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/plugins/wearable/import` | Import Samsung Health JSON export |
+| POST | `/api/plugins/wearable/activity` | Post real-time activity data |
+| GET | `/api/plugins/wearable/activities` | List activity records (?from, ?to) |
+| GET | `/api/plugins/wearable/activities/:date` | Get activity for specific date |
+| GET | `/api/plugins/wearable/today` | Get today's activity with progress |
+| GET | `/api/plugins/wearable/stats` | Get summary stats and weekly data |
+| GET | `/api/plugins/wearable/goals` | Get activity goals |
+| PUT | `/api/plugins/wearable/goals` | Update activity goals |
+
 ### System
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -158,12 +172,26 @@ npm start
 
 ---
 
-## Plugins (Future)
+## Plugins
+
+### Wearable Plugin
+Location: `plugins/wearable/`
+
+Samsung Watch integration for activity tracking and voice note context enrichment.
+
+Features:
+- Import Samsung Health JSON exports
+- Auto-attach activity context to voice entries (steps, calories, active minutes)
+- Activity goals tracking with progress visualization
+- Weekly activity charts
+- Contribute activity summaries to daily/weekly digests
+
+Data stored in `data/wearable.json`.
 
 ### Exercise Plugin
 Location: `plugins/exercise/`
 
-MS-focused exercise tracking based on neuroplasticity principles. To be integrated as a loadable plugin with its own routes and storage.
+MS-focused exercise tracking based on neuroplasticity principles.
 
 Features:
 - Balance, Upper Body, Lower Body, Stretching, Aerobic categories
@@ -196,7 +224,7 @@ Features:
 ### Phase 4
 - [x] Family sharing
 - [x] Mobile PWA optimization
-- [ ] Wearable integration
+- [x] Wearable integration (Samsung Watch)
 
 ---
 
