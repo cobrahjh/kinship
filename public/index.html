@@ -77,6 +77,66 @@
 
     .qr-container { text-align: center; padding: 20px; background: #fff; border-radius: 12px; margin: 16px 0; }
 
+    /* Waveform Visualization */
+    .waveform-container { display: flex; align-items: center; justify-content: center; gap: 2px; height: 60px; margin: 16px 0; }
+    .waveform-bar { width: 4px; background: #3b82f6; border-radius: 2px; transition: height 0.1s ease; }
+    .waveform-bar.active { background: #ef4444; }
+
+    /* Audio Player */
+    .audio-player { display: flex; align-items: center; gap: 12px; padding: 12px; background: #0f172a; border-radius: 10px; margin-top: 12px; }
+    .audio-player button { width: 36px; height: 36px; border-radius: 50%; border: none; background: #3b82f6; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .audio-player button:hover { background: #2563eb; }
+    .audio-progress { flex: 1; height: 4px; background: #334155; border-radius: 2px; cursor: pointer; position: relative; }
+    .audio-progress-fill { height: 100%; background: #3b82f6; border-radius: 2px; width: 0%; transition: width 0.1s; }
+    .audio-time { font-size: 12px; color: #64748b; min-width: 45px; }
+
+    /* Theme Toggle */
+    body.light-theme { background: #f1f5f9; color: #1e293b; }
+    body.light-theme .card, body.light-theme .section-card, body.light-theme .stat-card { background: #fff; border: 1px solid #e2e8f0; }
+    body.light-theme .header { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
+    body.light-theme input, body.light-theme textarea { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
+    body.light-theme .tab-btn { background: #e2e8f0; color: #475569; }
+    body.light-theme .tab-btn.active { background: #3b82f6; color: #fff; }
+
+    /* Mood Chart */
+    .mood-chart { height: 200px; background: #0f172a; border-radius: 12px; padding: 16px; position: relative; }
+    .mood-chart-bars { display: flex; align-items: flex-end; justify-content: space-between; height: 140px; gap: 4px; }
+    .mood-chart-bar { flex: 1; background: linear-gradient(to top, #3b82f6, #8b5cf6); border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.3s; }
+    .mood-chart-labels { display: flex; justify-content: space-between; margin-top: 8px; font-size: 10px; color: #64748b; }
+
+    /* Word Cloud */
+    .word-cloud { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding: 20px; }
+    .word-cloud-item { padding: 6px 14px; background: #1e3a5f; border-radius: 20px; color: #93c5fd; font-size: 14px; }
+    .word-cloud-item.large { font-size: 18px; background: #3b82f6; color: #fff; }
+    .word-cloud-item.medium { font-size: 16px; background: #2563eb; color: #fff; }
+
+    /* Keyboard Shortcuts */
+    kbd { padding: 3px 8px; background: #334155; border-radius: 4px; font-family: monospace; font-size: 12px; border: 1px solid #475569; }
+
+    /* Date Range Picker */
+    .date-range { display: flex; gap: 8px; align-items: center; }
+    .date-range input { padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; }
+
+    /* Saved Searches */
+    .saved-search { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #0f172a; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+    .saved-search:hover { background: #1e293b; }
+
+    /* Family Goals */
+    .goal-card { background: #0f172a; border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid #22c55e; }
+    .goal-progress { height: 8px; background: #334155; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+    .goal-progress-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #3b82f6); transition: width 0.3s; }
+
+    /* Family Messages */
+    .message-bubble { max-width: 80%; padding: 12px 16px; border-radius: 16px; margin-bottom: 8px; }
+    .message-bubble.sent { background: #3b82f6; margin-left: auto; border-bottom-right-radius: 4px; }
+    .message-bubble.received { background: #334155; border-bottom-left-radius: 4px; }
+
+    /* Activity Status */
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .status-dot.online { background: #22c55e; }
+    .status-dot.offline { background: #64748b; }
+    .status-dot.away { background: #f59e0b; }
+
     /* Entries List */
     .entries-list { max-height: 400px; overflow-y: auto; }
     .entry-item { background: #0f172a; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #334155; }
@@ -263,6 +323,7 @@
 <body>
   <div class="container">
     <div class="header" style="position: relative;">
+      <button id="themeToggle" onclick="toggleTheme()" style="position: absolute; top: 16px; right: 66px; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 20px; transition: all 0.2s;" title="Toggle Theme">🌙</button>
       <button id="settingsBtn" onclick="openSettings()" style="position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 20px; transition: all 0.2s;" title="Settings">⚙️</button>
       <h1>Kinship</h1>
       <p>Your AI Memory Companion</p>
@@ -326,6 +387,25 @@
             <span class="icon">🎤</span>
             <span>TAP TO RECORD</span>
           </button>
+
+          <!-- Waveform Visualization -->
+          <div class="waveform-container" id="waveformContainer" style="display: none;">
+            <div class="waveform-bar" style="height: 20px;"></div>
+            <div class="waveform-bar" style="height: 35px;"></div>
+            <div class="waveform-bar" style="height: 25px;"></div>
+            <div class="waveform-bar" style="height: 45px;"></div>
+            <div class="waveform-bar" style="height: 30px;"></div>
+            <div class="waveform-bar" style="height: 50px;"></div>
+            <div class="waveform-bar" style="height: 35px;"></div>
+            <div class="waveform-bar" style="height: 40px;"></div>
+            <div class="waveform-bar" style="height: 25px;"></div>
+            <div class="waveform-bar" style="height: 55px;"></div>
+            <div class="waveform-bar" style="height: 30px;"></div>
+            <div class="waveform-bar" style="height: 45px;"></div>
+            <div class="waveform-bar" style="height: 35px;"></div>
+            <div class="waveform-bar" style="height: 20px;"></div>
+            <div class="waveform-bar" style="height: 40px;"></div>
+          </div>
           <div class="context-btns">
             <button class="ctx-btn active" data-ctx="auto">Auto</button>
             <button class="ctx-btn" data-ctx="health">🏥 Health</button>
@@ -384,10 +464,37 @@
       <div class="card">
         <h2><span>🔍</span> Semantic Search</h2>
         <p style="color: #94a3b8; margin-bottom: 16px;">Search by meaning, not just keywords. Find related thoughts across all your notes.</p>
-        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-          <input type="text" id="searchQuery" placeholder="What are you looking for?" style="flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 15px;">
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <input type="text" id="searchQuery" placeholder="What are you looking for?" style="flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 15px;" onkeypress="if(event.key==='Enter')semanticSearch()">
           <button onclick="semanticSearch()" style="padding: 12px 24px; border-radius: 12px; border: none; background: #2563eb; color: #fff; cursor: pointer; font-size: 15px;">Search</button>
+          <button onclick="saveCurrentSearch()" style="padding: 12px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; cursor: pointer;" title="Save Search">⭐</button>
         </div>
+
+        <!-- Date Range Filters -->
+        <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;">
+          <div class="date-range">
+            <label style="font-size: 13px; color: #64748b;">From:</label>
+            <input type="date" id="searchDateFrom">
+          </div>
+          <div class="date-range">
+            <label style="font-size: 13px; color: #64748b;">To:</label>
+            <input type="date" id="searchDateTo">
+          </div>
+          <select id="searchContext" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc;">
+            <option value="">All Tags</option>
+            <option value="work">Work</option>
+            <option value="personal">Personal</option>
+            <option value="health">Health</option>
+            <option value="idea">Ideas</option>
+          </select>
+        </div>
+
+        <!-- Saved Searches -->
+        <div id="savedSearches" style="margin-bottom: 16px; display: none;">
+          <p style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Saved Searches:</p>
+          <div id="savedSearchesList" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+        </div>
+
         <div id="searchResults">
           <div class="empty-state">
             <div class="icon">🔍</div>
@@ -418,6 +525,33 @@
     </div>
   
     <div id="patternsTab" style="display: none;">
+      <!-- Mood Trends Chart -->
+      <div class="card">
+        <h2><span>📊</span> Mood Trends</h2>
+        <div class="mood-chart">
+          <div class="mood-chart-bars" id="moodChartBars">
+            <!-- Bars will be populated by JS -->
+          </div>
+          <div class="mood-chart-labels" id="moodChartLabels">
+            <!-- Labels will be populated by JS -->
+          </div>
+        </div>
+        <div style="display: flex; justify-content: center; gap: 16px; margin-top: 12px; font-size: 12px; color: #64748b;">
+          <span><span style="color: #22c55e;">●</span> Positive</span>
+          <span><span style="color: #64748b;">●</span> Neutral</span>
+          <span><span style="color: #ef4444;">●</span> Negative</span>
+        </div>
+      </div>
+
+      <!-- Topic Word Cloud -->
+      <div class="card">
+        <h2><span>💭</span> Topic Cloud</h2>
+        <div class="word-cloud" id="topicWordCloud">
+          <span style="color: #64748b;">Loading topics...</span>
+        </div>
+      </div>
+
+      <!-- Pattern Detection -->
       <div class="card">
         <h2><span>📈</span> Pattern Detection</h2>
         <div style="display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap;">
@@ -492,6 +626,29 @@
         <h3 style="margin-bottom: 16px;">Family Feed</h3>
         <div id="familyFeed">
           <p style="color: #64748b; text-align: center; padding: 20px;">No shared entries yet</p>
+        </div>
+      </div>
+
+      <!-- Family Goals -->
+      <div class="section-card" id="familyGoalsCard" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3>Family Goals</h3>
+          <button onclick="showAddGoalModal()" style="padding: 6px 12px; background: #2563eb; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 13px;">+ Add Goal</button>
+        </div>
+        <div id="familyGoalsList">
+          <p style="color: #64748b; text-align: center; padding: 16px;">No family goals yet. Create one to track together!</p>
+        </div>
+      </div>
+
+      <!-- Family Messages -->
+      <div class="section-card" id="familyMessagesCard" style="display: none;">
+        <h3 style="margin-bottom: 16px;">Family Chat</h3>
+        <div id="familyMessages" style="max-height: 300px; overflow-y: auto; margin-bottom: 12px; padding: 8px;">
+          <p style="color: #64748b; text-align: center; padding: 16px;">No messages yet. Start a conversation!</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="familyMessageInput" placeholder="Type a message..." style="flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #334155; background: #0f172a; color: #f8fafc;">
+          <button onclick="sendFamilyMessage()" style="padding: 12px 20px; background: #2563eb; border: none; border-radius: 20px; color: #fff; cursor: pointer;">Send</button>
         </div>
       </div>
     </div>
@@ -874,7 +1031,7 @@
       }
     }
 
-    // Record button
+    // Record button with waveform visualization
     document.getElementById('recordBtn').onclick = async () => {
       const btn = document.getElementById('recordBtn');
       const status = document.getElementById('recordStatus');
@@ -889,6 +1046,9 @@
           mediaRecorder.onstop = uploadRecording;
           mediaRecorder.start();
 
+          // Start waveform visualization
+          startWaveform(stream);
+
           recording = true;
           btn.classList.add('recording');
           btn.innerHTML = '<span class="icon">⏹️</span><span>RECORDING...</span>';
@@ -900,6 +1060,10 @@
       } else {
         mediaRecorder.stop();
         mediaRecorder.stream.getTracks().forEach(t => t.stop());
+
+        // Stop waveform visualization
+        stopWaveform();
+
         recording = false;
         btn.classList.remove('recording');
         btn.innerHTML = '<span class="icon">🎤</span><span>TAP TO RECORD</span>';
@@ -2547,6 +2711,323 @@
         }
       });
     });
+
+    // ============ NEW FEATURES ============
+
+    // Theme Toggle
+    function toggleTheme() {
+      document.body.classList.toggle('light-theme');
+      const isLight = document.body.classList.contains('light-theme');
+      document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    }
+
+    // Load saved theme
+    if (localStorage.getItem('theme') === 'light') {
+      document.body.classList.add('light-theme');
+      document.getElementById('themeToggle').textContent = '☀️';
+    }
+
+    // Waveform Visualization
+    let audioContext, analyser, dataArray, waveformAnimationId;
+
+    function startWaveform(stream) {
+      const waveform = document.getElementById('waveformContainer');
+      waveform.style.display = 'flex';
+      const bars = waveform.querySelectorAll('.waveform-bar');
+
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioContext.createAnalyser();
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+      analyser.fftSize = 32;
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      function animate() {
+        analyser.getByteFrequencyData(dataArray);
+        bars.forEach((bar, i) => {
+          const value = dataArray[i % dataArray.length] || 0;
+          bar.style.height = Math.max(4, value / 4) + 'px';
+          bar.classList.add('active');
+        });
+        waveformAnimationId = requestAnimationFrame(animate);
+      }
+      animate();
+    }
+
+    function stopWaveform() {
+      cancelAnimationFrame(waveformAnimationId);
+      if (audioContext) audioContext.close();
+      const waveform = document.getElementById('waveformContainer');
+      waveform.style.display = 'none';
+      waveform.querySelectorAll('.waveform-bar').forEach(b => b.classList.remove('active'));
+    }
+
+    // Saved Searches
+    let savedSearches = JSON.parse(localStorage.getItem('savedSearches') || '[]');
+
+    function saveCurrentSearch() {
+      const query = document.getElementById('searchQuery').value.trim();
+      if (!query) return;
+      if (!savedSearches.includes(query)) {
+        savedSearches.push(query);
+        localStorage.setItem('savedSearches', JSON.stringify(savedSearches));
+        renderSavedSearches();
+        showToast('Search saved!', 'success');
+      }
+    }
+
+    function renderSavedSearches() {
+      const container = document.getElementById('savedSearchesList');
+      const section = document.getElementById('savedSearches');
+      if (savedSearches.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+      section.style.display = 'block';
+      container.innerHTML = savedSearches.map((s, i) => `
+        <div class="saved-search" onclick="runSavedSearch('${s.replace(/'/g, "\\'")}')">
+          <span>⭐</span>
+          <span style="flex: 1;">${s}</span>
+          <button onclick="event.stopPropagation();deleteSavedSearch(${i})" style="background: none; border: none; color: #ef4444; cursor: pointer;">×</button>
+        </div>
+      `).join('');
+    }
+
+    function runSavedSearch(query) {
+      document.getElementById('searchQuery').value = query;
+      semanticSearch();
+    }
+
+    function deleteSavedSearch(index) {
+      savedSearches.splice(index, 1);
+      localStorage.setItem('savedSearches', JSON.stringify(savedSearches));
+      renderSavedSearches();
+    }
+
+    // Initialize saved searches
+    renderSavedSearches();
+
+    // Mood Chart
+    async function loadMoodChart() {
+      try {
+        const res = await fetch('/api/lifelog/entries');
+        const entries = await res.json();
+
+        const last14Days = [];
+        for (let i = 13; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          last14Days.push(date.toISOString().split('T')[0]);
+        }
+
+        const moodByDay = {};
+        last14Days.forEach(d => moodByDay[d] = []);
+
+        entries.forEach(e => {
+          const day = e.timestamp.split('T')[0];
+          if (moodByDay[day] && e.sentimentScore !== undefined) {
+            moodByDay[day].push(e.sentimentScore);
+          }
+        });
+
+        const barsContainer = document.getElementById('moodChartBars');
+        const labelsContainer = document.getElementById('moodChartLabels');
+
+        barsContainer.innerHTML = last14Days.map(day => {
+          const scores = moodByDay[day];
+          const avg = scores.length > 0 ? scores.reduce((a,b) => a+b, 0) / scores.length : 0.5;
+          const height = Math.max(4, avg * 140);
+          const color = avg > 0.6 ? '#22c55e' : avg < 0.4 ? '#ef4444' : '#64748b';
+          return `<div class="mood-chart-bar" style="height: ${height}px; background: ${color};" title="${day}: ${(avg * 100).toFixed(0)}%"></div>`;
+        }).join('');
+
+        labelsContainer.innerHTML = last14Days.filter((d, i) => i % 2 === 0).map(d => {
+          const date = new Date(d);
+          return `<span>${date.getDate()}/${date.getMonth() + 1}</span>`;
+        }).join('');
+      } catch (e) {
+        console.error('Error loading mood chart:', e);
+      }
+    }
+
+    // Topic Word Cloud
+    async function loadTopicCloud() {
+      try {
+        const res = await fetch('/api/lifelog/entries');
+        const entries = await res.json();
+
+        const topicCounts = {};
+        entries.forEach(e => {
+          (e.topics || []).forEach(t => {
+            topicCounts[t] = (topicCounts[t] || 0) + 1;
+          });
+        });
+
+        const sorted = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 20);
+        const maxCount = sorted[0]?.[1] || 1;
+
+        const cloud = document.getElementById('topicWordCloud');
+        if (sorted.length === 0) {
+          cloud.innerHTML = '<span style="color: #64748b;">No topics yet. Record some voice notes!</span>';
+          return;
+        }
+
+        cloud.innerHTML = sorted.map(([topic, count]) => {
+          const size = count === maxCount ? 'large' : count > maxCount / 2 ? 'medium' : '';
+          return `<span class="word-cloud-item ${size}">${topic}</span>`;
+        }).join('');
+      } catch (e) {
+        console.error('Error loading topic cloud:', e);
+      }
+    }
+
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+      // Don't trigger shortcuts when typing in inputs
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'r' || e.key === 'R') {
+        document.getElementById('recordBtn').click();
+      } else if (e.key === '1') {
+        showTab('capture');
+      } else if (e.key === '2') {
+        showTab('journal');
+      } else if (e.key === '3') {
+        showTab('search');
+      } else if (e.key === '4') {
+        showTab('digest');
+      } else if (e.key === '5') {
+        showTab('patterns');
+      } else if (e.key === '6') {
+        showTab('family');
+      } else if (e.key === 't' || e.key === 'T') {
+        toggleTheme();
+      } else if (e.key === '?' && e.shiftKey) {
+        showToast('Shortcuts: R=Record, 1-6=Tabs, T=Theme', 'info');
+      }
+    });
+
+    // Family Goals
+    let familyGoals = [];
+
+    async function loadFamilyGoals() {
+      // For now, store goals locally (could be synced via family sync)
+      familyGoals = JSON.parse(localStorage.getItem('familyGoals') || '[]');
+      renderFamilyGoals();
+    }
+
+    function renderFamilyGoals() {
+      const container = document.getElementById('familyGoalsList');
+      const card = document.getElementById('familyGoalsCard');
+
+      if (currentFamily?.hasFamily) {
+        card.style.display = 'block';
+      }
+
+      if (familyGoals.length === 0) {
+        container.innerHTML = '<p style="color: #64748b; text-align: center; padding: 16px;">No family goals yet. Create one to track together!</p>';
+        return;
+      }
+
+      container.innerHTML = familyGoals.map((g, i) => `
+        <div class="goal-card">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+              <strong>${g.title}</strong>
+              <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">${g.description || ''}</p>
+            </div>
+            <button onclick="updateGoalProgress(${i})" style="background: #22c55e; border: none; border-radius: 50%; width: 28px; height: 28px; color: #fff; cursor: pointer;">+</button>
+          </div>
+          <div class="goal-progress">
+            <div class="goal-progress-fill" style="width: ${g.progress || 0}%;"></div>
+          </div>
+          <p style="font-size: 12px; color: #64748b; margin-top: 6px;">${g.progress || 0}% complete</p>
+        </div>
+      `).join('');
+    }
+
+    function showAddGoalModal() {
+      const title = prompt('Goal title:');
+      if (!title) return;
+      const description = prompt('Description (optional):');
+      familyGoals.push({ title, description, progress: 0, createdAt: new Date().toISOString() });
+      localStorage.setItem('familyGoals', JSON.stringify(familyGoals));
+      renderFamilyGoals();
+      showToast('Goal created!', 'success');
+    }
+
+    function updateGoalProgress(index) {
+      familyGoals[index].progress = Math.min(100, (familyGoals[index].progress || 0) + 10);
+      localStorage.setItem('familyGoals', JSON.stringify(familyGoals));
+      renderFamilyGoals();
+      if (familyGoals[index].progress >= 100) {
+        showToast('Goal completed! 🎉', 'success');
+      }
+    }
+
+    // Family Messages (local storage for demo, would need server sync)
+    let familyMessages = JSON.parse(localStorage.getItem('familyMessages') || '[]');
+
+    function renderFamilyMessages() {
+      const container = document.getElementById('familyMessages');
+      const card = document.getElementById('familyMessagesCard');
+
+      if (currentFamily?.hasFamily) {
+        card.style.display = 'block';
+      }
+
+      if (familyMessages.length === 0) {
+        container.innerHTML = '<p style="color: #64748b; text-align: center; padding: 16px;">No messages yet. Start a conversation!</p>';
+        return;
+      }
+
+      container.innerHTML = familyMessages.map(m => `
+        <div class="message-bubble ${m.senderId === currentIdentity?.deviceId ? 'sent' : 'received'}">
+          <p style="font-size: 11px; color: ${m.senderId === currentIdentity?.deviceId ? 'rgba(255,255,255,0.7)' : '#64748b'}; margin-bottom: 4px;">${m.senderName}</p>
+          <p>${m.text}</p>
+        </div>
+      `).join('');
+
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function sendFamilyMessage() {
+      const input = document.getElementById('familyMessageInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      familyMessages.push({
+        senderId: currentIdentity?.deviceId,
+        senderName: currentIdentity?.memberName || 'Me',
+        text,
+        timestamp: new Date().toISOString()
+      });
+
+      localStorage.setItem('familyMessages', JSON.stringify(familyMessages));
+      input.value = '';
+      renderFamilyMessages();
+    }
+
+    // Load patterns tab extras
+    const originalShowTab = showTab;
+    showTab = function(tab) {
+      originalShowTab(tab);
+      if (tab === 'patterns') {
+        loadMoodChart();
+        loadTopicCloud();
+      }
+      if (tab === 'family') {
+        loadFamilyGoals();
+        renderFamilyMessages();
+      }
+    };
+
+    // Audio playback helper (used in journal entries)
+    function playAudio(audioPath) {
+      const audio = new Audio('/api/audio/' + audioPath);
+      audio.play();
+    }
   </script>
 </body>
 </html>
