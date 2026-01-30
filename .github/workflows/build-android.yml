@@ -1,0 +1,86 @@
+name: Build Android Apps
+
+on:
+  push:
+    paths:
+      - 'companion-app/**'
+  pull_request:
+    paths:
+      - 'companion-app/**'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x companion-app/gradlew
+
+      - name: Build Phone App (Debug)
+        run: |
+          cd companion-app
+          ./gradlew :app:assembleDebug
+
+      - name: Build Watch App (Debug)
+        run: |
+          cd companion-app
+          ./gradlew :watch:assembleDebug
+
+      - name: Upload Phone APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: kinship-companion-phone
+          path: companion-app/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload Watch APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: kinship-companion-watch
+          path: companion-app/watch/build/outputs/apk/debug/watch-debug.apk
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x companion-app/gradlew
+
+      - name: Build Release APKs
+        run: |
+          cd companion-app
+          ./gradlew :app:assembleRelease :watch:assembleRelease
+
+      - name: Upload Release APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: kinship-companion-release
+          path: |
+            companion-app/app/build/outputs/apk/release/*.apk
+            companion-app/watch/build/outputs/apk/release/*.apk
