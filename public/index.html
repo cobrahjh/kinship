@@ -266,6 +266,7 @@
       <button class="tab-btn" onclick="showTab('search')">Search</button>
       <button class="tab-btn" onclick="showTab('digest')">Digest</button>
       <button class="tab-btn" onclick="showTab('patterns')">Patterns</button>
+      <button class="tab-btn" id="familyTabBtn" onclick="showTab('family')" style="display: none;">Family</button>
     </div>
 
     <div id="captureTab">
@@ -412,8 +413,158 @@
       </div>
     </div>
 
+    <!-- Family Tab -->
+    <div id="familyTab" style="display: none;">
+      <div class="section-card" id="familySetupCard" style="display: none;">
+        <h3 style="margin-bottom: 16px;">Family Sharing</h3>
+        <p style="color: #94a3b8; margin-bottom: 16px;">Share voice notes with your family and get combined insights.</p>
+
+        <div id="noFamilySetup">
+          <button class="action-btn" onclick="showCreateFamilyModal()" style="width: 100%; margin-bottom: 12px; background: linear-gradient(135deg, #2563eb, #7c3aed);">Create Family</button>
+          <button class="action-btn" onclick="showJoinFamilyModal()" style="width: 100%; background: #334155;">Join Family</button>
+        </div>
+      </div>
+
+      <div class="section-card" id="familyInfoCard" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 id="familyDisplayName">Family Name</h3>
+          <button onclick="showFamilySettings()" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 18px;">⚙️</button>
+        </div>
+
+        <div id="familyMembersList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;"></div>
+
+        <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+          <button class="action-btn" onclick="syncFamily()" style="flex: 1; background: #2563eb;">Sync Now</button>
+          <button class="action-btn" onclick="showInviteModal()" style="flex: 1; background: #334155;">Invite</button>
+        </div>
+
+        <p style="font-size: 12px; color: #64748b;" id="lastSyncText">Last sync: Never</p>
+      </div>
+
+      <div class="section-card" id="familyDigestCard" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3>Family Digest</h3>
+          <input type="date" id="familyDigestDate" onchange="loadFamilyDigest()" style="padding: 8px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc;">
+        </div>
+        <div id="familyDigestContent">
+          <p style="color: #64748b; text-align: center; padding: 20px;">Select a date to view family digest</p>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h3 style="margin-bottom: 16px;">Family Feed</h3>
+        <div id="familyFeed">
+          <p style="color: #64748b; text-align: center; padding: 20px;">No shared entries yet</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Plugin Tabs Container -->
     <div id="pluginTabsContainer"></div>
+  </div>
+
+  <!-- Profile Setup Modal -->
+  <div class="modal-overlay" id="profileModal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px; text-align: left;">
+      <h2 style="font-size: 20px; margin-bottom: 8px;">Welcome to Kinship</h2>
+      <p style="color: #94a3b8; margin-bottom: 20px;">Let's set up your profile</p>
+
+      <div style="margin-bottom: 16px;">
+        <label style="font-size: 14px; color: #94a3b8; display: block; margin-bottom: 8px;">Your Name</label>
+        <input type="text" id="profileNameInput" placeholder="Enter your name" maxlength="50" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 16px;">
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="font-size: 14px; color: #94a3b8; display: block; margin-bottom: 8px;">Pick Your Color</label>
+        <div id="profileColorPicker" style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <div class="color-dot selected" data-color="#3b82f6" style="width: 36px; height: 36px; border-radius: 50%; background: #3b82f6; cursor: pointer; border: 3px solid transparent;"></div>
+          <div class="color-dot" data-color="#22c55e" style="width: 36px; height: 36px; border-radius: 50%; background: #22c55e; cursor: pointer; border: 3px solid transparent;"></div>
+          <div class="color-dot" data-color="#f59e0b" style="width: 36px; height: 36px; border-radius: 50%; background: #f59e0b; cursor: pointer; border: 3px solid transparent;"></div>
+          <div class="color-dot" data-color="#ef4444" style="width: 36px; height: 36px; border-radius: 50%; background: #ef4444; cursor: pointer; border: 3px solid transparent;"></div>
+          <div class="color-dot" data-color="#8b5cf6" style="width: 36px; height: 36px; border-radius: 50%; background: #8b5cf6; cursor: pointer; border: 3px solid transparent;"></div>
+          <div class="color-dot" data-color="#ec4899" style="width: 36px; height: 36px; border-radius: 50%; background: #ec4899; cursor: pointer; border: 3px solid transparent;"></div>
+        </div>
+      </div>
+
+      <button onclick="saveProfile()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #2563eb, #7c3aed); border: none; border-radius: 10px; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer;">Continue</button>
+    </div>
+  </div>
+
+  <!-- Create Family Modal -->
+  <div class="modal-overlay" id="createFamilyModal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px; text-align: left;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="font-size: 20px;">Create Family</h2>
+        <button onclick="closeCreateFamilyModal()" style="background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer;">&times;</button>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="font-size: 14px; color: #94a3b8; display: block; margin-bottom: 8px;">Family Name</label>
+        <input type="text" id="createFamilyNameInput" placeholder="e.g., The Smiths" maxlength="100" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 16px;">
+      </div>
+
+      <button onclick="createFamily()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #2563eb, #7c3aed); border: none; border-radius: 10px; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer;">Create Family</button>
+    </div>
+  </div>
+
+  <!-- Join Family Modal -->
+  <div class="modal-overlay" id="joinFamilyModal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px; text-align: left;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="font-size: 20px;">Join Family</h2>
+        <button onclick="closeJoinFamilyModal()" style="background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer;">&times;</button>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="font-size: 14px; color: #94a3b8; display: block; margin-bottom: 8px;">Invite Code</label>
+        <input type="text" id="joinFamilyCodeInput" placeholder="Paste invite code here" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px;">
+      </div>
+
+      <button onclick="joinFamily()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #2563eb, #7c3aed); border: none; border-radius: 10px; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer;">Join Family</button>
+    </div>
+  </div>
+
+  <!-- Invite Modal -->
+  <div class="modal-overlay" id="inviteModal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px; text-align: left;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="font-size: 20px;">Invite to Family</h2>
+        <button onclick="closeInviteModal()" style="background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer;">&times;</button>
+      </div>
+
+      <p style="color: #94a3b8; margin-bottom: 16px;">Share this code with family members:</p>
+
+      <div style="background: #0f172a; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+        <input type="text" id="inviteCodeDisplay" readonly style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #f8fafc; font-size: 13px; margin-bottom: 8px;">
+        <button onclick="copyInviteCode()" style="width: 100%; padding: 10px; background: #2563eb; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 14px;">Copy Invite Code</button>
+      </div>
+
+      <p style="font-size: 12px; color: #64748b; text-align: center;">Or send via email:</p>
+      <a id="inviteEmailLink" href="#" style="display: block; text-align: center; color: #3b82f6; margin-top: 8px; text-decoration: none;">Send Email Invite</a>
+    </div>
+  </div>
+
+  <!-- Family Settings Modal -->
+  <div class="modal-overlay" id="familySettingsModal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px; text-align: left;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="font-size: 20px;">Family Settings</h2>
+        <button onclick="closeFamilySettings()" style="background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer;">&times;</button>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h3 style="font-size: 14px; color: #94a3b8; margin-bottom: 12px;">Sync Folder</h3>
+        <p style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Set the folder path for syncing with family (e.g., Dropbox, Google Drive)</p>
+        <input type="text" id="syncPathInput" placeholder="C:\Users\Shared\KinshipFamily" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 13px;">
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h3 style="font-size: 14px; color: #94a3b8; margin-bottom: 12px;">Family Members</h3>
+        <div id="familySettingsMembersList" style="max-height: 150px; overflow-y: auto;"></div>
+      </div>
+
+      <button onclick="leaveFamily()" style="width: 100%; padding: 12px; background: #7f1d1d; border: none; border-radius: 8px; color: #fca5a5; font-size: 14px; cursor: pointer;">Leave Family</button>
+    </div>
   </div>
 
   <!-- Settings Modal -->
@@ -534,6 +685,19 @@
             <span id="shareExpiryText"></span>
           </div>
         </div>
+
+        <!-- Family Sharing Section -->
+        <div id="familyShareSection" style="display: none; border-top: 1px solid #334155; padding-top: 16px; margin-top: 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span>Share with family</span>
+            <label style="position: relative; display: inline-block; width: 50px; height: 28px;">
+              <input type="checkbox" id="familyShareToggle" onchange="toggleFamilyShare()" style="opacity: 0; width: 0; height: 0;">
+              <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; border-radius: 28px; transition: 0.3s;"></span>
+              <span id="familyShareToggleKnob" style="position: absolute; content: ''; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; border-radius: 50%; transition: 0.3s;"></span>
+            </label>
+          </div>
+          <p style="font-size: 12px; color: #64748b;">Shared entries appear in your family's feed after syncing.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -621,6 +785,7 @@
       document.getElementById('searchTab').style.display = 'none';
       document.getElementById('digestTab').style.display = 'none';
       document.getElementById('patternsTab').style.display = 'none';
+      document.getElementById('familyTab').style.display = 'none';
 
       // Hide all plugin tabs
       loadedPlugins.forEach(p => {
@@ -642,6 +807,7 @@
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('digestDate').value = today;
       }
+      if (tab === 'family') loadFamilyFeed();
     }
 
     // Record button
@@ -1630,6 +1796,7 @@
     loadStats();
     loadProgress();
     loadPlugins();
+    checkIdentity();
 
     // Check for fresh start after a brief delay
     setTimeout(showFreshStartIfNeeded, 500);
@@ -1640,6 +1807,547 @@
         .then(reg => console.log('SW registered:', reg.scope))
         .catch(err => console.warn('SW registration failed:', err));
     }
+
+    // ============ IDENTITY & FAMILY FUNCTIONS ============
+
+    let currentIdentity = null;
+    let currentFamily = null;
+    let selectedProfileColor = '#3b82f6';
+
+    async function checkIdentity() {
+      try {
+        const res = await fetch('/api/identity');
+        currentIdentity = await res.json();
+
+        // If no name set, show profile setup modal
+        if (currentIdentity.needsSetup) {
+          document.getElementById('profileModal').style.display = 'flex';
+        }
+
+        // Load family status
+        await loadFamilyStatus();
+      } catch (e) {
+        console.error('Error checking identity:', e);
+      }
+    }
+
+    async function loadFamilyStatus() {
+      try {
+        const res = await fetch('/api/family');
+        currentFamily = await res.json();
+
+        // Show/hide family tab based on family status
+        const familyTabBtn = document.getElementById('familyTabBtn');
+        const familySetupCard = document.getElementById('familySetupCard');
+        const familyInfoCard = document.getElementById('familyInfoCard');
+        const familyShareSection = document.getElementById('familyShareSection');
+
+        const familyDigestCard = document.getElementById('familyDigestCard');
+
+        if (currentFamily.hasFamily) {
+          familyTabBtn.style.display = 'block';
+          familySetupCard.style.display = 'none';
+          familyInfoCard.style.display = 'block';
+          familyShareSection.style.display = 'block';
+          familyDigestCard.style.display = 'block';
+
+          // Update family info
+          document.getElementById('familyDisplayName').textContent = currentFamily.familyName;
+
+          // Update members list
+          const membersList = document.getElementById('familyMembersList');
+          membersList.innerHTML = currentFamily.members.map(m =>
+            `<span style="padding: 6px 12px; background: ${m.color || '#334155'}; border-radius: 16px; font-size: 13px;">${m.name}</span>`
+          ).join('');
+
+          // Update last sync time
+          if (currentFamily.lastSyncAt) {
+            document.getElementById('lastSyncText').textContent = 'Last sync: ' + new Date(currentFamily.lastSyncAt).toLocaleString();
+          }
+
+          // Set digest date to today
+          document.getElementById('familyDigestDate').value = new Date().toISOString().split('T')[0];
+
+          // Load family feed
+          loadFamilyFeed();
+        } else {
+          familyTabBtn.style.display = 'block';
+          familySetupCard.style.display = 'block';
+          familyInfoCard.style.display = 'none';
+          familyShareSection.style.display = 'none';
+          familyDigestCard.style.display = 'none';
+        }
+      } catch (e) {
+        console.error('Error loading family status:', e);
+      }
+    }
+
+    async function loadFamilyFeed() {
+      try {
+        const res = await fetch('/api/lifelog/family-feed');
+        const data = await res.json();
+
+        const container = document.getElementById('familyFeed');
+
+        if (!data.entries || data.entries.length === 0) {
+          container.innerHTML = '<p style="color: #64748b; text-align: center; padding: 20px;">No shared entries yet. Share some entries with your family!</p>';
+          return;
+        }
+
+        container.innerHTML = data.entries.map(e => {
+          const time = new Date(e.timestamp).toLocaleString('en-US', {
+            month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+          });
+
+          return `
+            <div style="background: #0f172a; border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 3px solid ${e.ownerColor || '#3b82f6'};">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-weight: 600; color: ${e.ownerColor || '#3b82f6'};">${e.ownerName || 'Unknown'}${e.isOwn ? ' (you)' : ''}</span>
+                <span style="font-size: 12px; color: #64748b;">${time}</span>
+              </div>
+              <p style="color: #f8fafc; margin-bottom: 8px;">${e.summary || e.transcript || 'Voice note'}</p>
+              ${e.mood ? `<span style="padding: 4px 10px; background: #334155; border-radius: 12px; font-size: 12px;">${e.mood}</span>` : ''}
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        console.error('Error loading family feed:', e);
+      }
+    }
+
+    async function loadFamilyDigest() {
+      const date = document.getElementById('familyDigestDate').value;
+      const container = document.getElementById('familyDigestContent');
+
+      if (!date) {
+        container.innerHTML = '<p style="color: #64748b; text-align: center; padding: 20px;">Select a date to view family digest</p>';
+        return;
+      }
+
+      container.innerHTML = '<p style="color: #64748b; text-align: center; padding: 20px;">Loading family digest...</p>';
+
+      try {
+        const res = await fetch(`/api/family/digest/week/${date}?ai=true`);
+        const data = await res.json();
+
+        if (data.error) {
+          container.innerHTML = `<p style="color: #ef4444; text-align: center; padding: 20px;">${data.error}</p>`;
+          return;
+        }
+
+        let html = `
+          <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #334155;">
+            <p style="color: #64748b; font-size: 12px;">Week of ${data.weekStart} to ${data.weekEnd}</p>
+            <p style="color: #94a3b8; font-size: 13px;">${data.totalEntries} entries from ${data.memberCount} family members</p>
+          </div>
+        `;
+
+        if (data.ai) {
+          const ai = data.ai;
+          html += `
+            <h4 style="font-size: 18px; margin-bottom: 8px; color: #3b82f6;">${ai.title || 'Family Digest'}</h4>
+            <p style="margin-bottom: 16px; white-space: pre-wrap; line-height: 1.6;">${ai.narrative || ''}</p>
+          `;
+
+          if (ai.familyThemes && ai.familyThemes.length) {
+            html += `
+              <div style="margin-bottom: 16px;">
+                <h5 style="font-size: 13px; color: #94a3b8; margin-bottom: 8px;">Family Themes</h5>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                  ${ai.familyThemes.map(t => `<span style="padding: 4px 12px; background: #1e3a5f; border-radius: 12px; font-size: 13px;">${t}</span>`).join('')}
+                </div>
+              </div>
+            `;
+          }
+
+          if (ai.memberHighlights && ai.memberHighlights.length) {
+            html += `
+              <div style="margin-bottom: 16px;">
+                <h5 style="font-size: 13px; color: #94a3b8; margin-bottom: 8px;">Member Highlights</h5>
+                ${ai.memberHighlights.map(h => `
+                  <div style="background: #0f172a; border-radius: 8px; padding: 12px; margin-bottom: 8px;">
+                    <strong style="color: #3b82f6;">${h.name}</strong>
+                    <p style="color: #f8fafc; margin-top: 4px;">${h.highlight}</p>
+                  </div>
+                `).join('')}
+              </div>
+            `;
+          }
+
+          if (ai.familyWins && ai.familyWins.length) {
+            html += `
+              <div style="margin-bottom: 16px;">
+                <h5 style="font-size: 13px; color: #94a3b8; margin-bottom: 8px;">Family Wins</h5>
+                <ul style="margin: 0; padding-left: 20px; color: #22c55e;">
+                  ${ai.familyWins.map(w => `<li style="margin-bottom: 4px;">${w}</li>`).join('')}
+                </ul>
+              </div>
+            `;
+          }
+
+          if (ai.lookingAhead) {
+            html += `
+              <div style="background: linear-gradient(135deg, #1e3a5f, #3b1f5f); border-radius: 12px; padding: 16px; margin-top: 16px;">
+                <h5 style="font-size: 13px; color: #94a3b8; margin-bottom: 8px;">Looking Ahead</h5>
+                <p style="color: #f8fafc;">${ai.lookingAhead}</p>
+              </div>
+            `;
+          }
+        } else if (data.aiError) {
+          html += `<p style="color: #f59e0b;">AI digest unavailable: ${data.aiError}</p>`;
+
+          // Show basic stats
+          if (data.byMember) {
+            html += '<div style="margin-top: 16px;">';
+            Object.entries(data.byMember).forEach(([name, info]) => {
+              html += `
+                <div style="background: #0f172a; border-radius: 8px; padding: 12px; margin-bottom: 8px;">
+                  <strong>${name}</strong>: ${info.count} entries
+                  ${info.moods.length ? `<br><span style="color: #64748b; font-size: 12px;">Moods: ${info.moods.join(', ')}</span>` : ''}
+                </div>
+              `;
+            });
+            html += '</div>';
+          }
+        } else {
+          html += '<p style="color: #64748b;">No AI digest available. Configure ANTHROPIC_API_KEY to enable.</p>';
+        }
+
+        container.innerHTML = html;
+      } catch (e) {
+        console.error('Error loading family digest:', e);
+        container.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 20px;">Error loading family digest</p>';
+      }
+    }
+
+    // Profile color picker
+    document.querySelectorAll('#profileColorPicker .color-dot').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('#profileColorPicker .color-dot').forEach(c => {
+          c.style.borderColor = 'transparent';
+          c.classList.remove('selected');
+        });
+        el.style.borderColor = '#fff';
+        el.classList.add('selected');
+        selectedProfileColor = el.dataset.color;
+      });
+    });
+
+    async function saveProfile() {
+      const name = document.getElementById('profileNameInput').value.trim();
+
+      if (!name) {
+        alert('Please enter your name');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/identity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ memberName: name, memberColor: selectedProfileColor })
+        });
+
+        if (res.ok) {
+          document.getElementById('profileModal').style.display = 'none';
+          currentIdentity = await res.json();
+          loadFamilyStatus();
+        } else {
+          const err = await res.json();
+          alert(err.error || 'Failed to save profile');
+        }
+      } catch (e) {
+        alert('Error saving profile');
+      }
+    }
+
+    function showCreateFamilyModal() {
+      document.getElementById('createFamilyModal').style.display = 'flex';
+    }
+
+    function closeCreateFamilyModal() {
+      document.getElementById('createFamilyModal').style.display = 'none';
+    }
+
+    function showJoinFamilyModal() {
+      document.getElementById('joinFamilyModal').style.display = 'flex';
+    }
+
+    function closeJoinFamilyModal() {
+      document.getElementById('joinFamilyModal').style.display = 'none';
+    }
+
+    async function createFamily() {
+      const name = document.getElementById('createFamilyNameInput').value.trim();
+
+      if (!name) {
+        alert('Please enter a family name');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/family/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ familyName: name })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          closeCreateFamilyModal();
+          await loadFamilyStatus();
+          showInviteModal();
+        } else {
+          alert(data.error || 'Failed to create family');
+        }
+      } catch (e) {
+        alert('Error creating family');
+      }
+    }
+
+    async function joinFamily() {
+      const code = document.getElementById('joinFamilyCodeInput').value.trim();
+
+      if (!code) {
+        alert('Please enter an invite code');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/family/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inviteCode: code })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          closeJoinFamilyModal();
+          await loadFamilyStatus();
+          alert('Welcome to ' + data.familyName + '!');
+        } else {
+          alert(data.error || 'Failed to join family');
+        }
+      } catch (e) {
+        alert('Error joining family');
+      }
+    }
+
+    async function showInviteModal() {
+      try {
+        const res = await fetch('/api/family/invite');
+        const data = await res.json();
+
+        document.getElementById('inviteCodeDisplay').value = data.inviteCode;
+
+        // Create email link
+        const subject = encodeURIComponent('Join My Kinship Family');
+        const body = encodeURIComponent(`I'd like you to join my family on Kinship!\n\nFamily: ${data.familyName}\n\nTo join:\n1. Open Kinship on your device\n2. Go to the Family tab\n3. Click "Join Family"\n4. Paste this code: ${data.inviteCode}\n\nOr open this link: ${window.location.origin}/join-family?code=${data.inviteCode}`);
+        document.getElementById('inviteEmailLink').href = `mailto:?subject=${subject}&body=${body}`;
+
+        document.getElementById('inviteModal').style.display = 'flex';
+      } catch (e) {
+        alert('Error generating invite');
+      }
+    }
+
+    function closeInviteModal() {
+      document.getElementById('inviteModal').style.display = 'none';
+    }
+
+    function copyInviteCode() {
+      const code = document.getElementById('inviteCodeDisplay').value;
+      navigator.clipboard.writeText(code).then(() => {
+        alert('Invite code copied!');
+      });
+    }
+
+    function showFamilySettings() {
+      // Populate sync path
+      document.getElementById('syncPathInput').value = currentFamily.syncPath || '';
+
+      // Populate members
+      const membersList = document.getElementById('familySettingsMembersList');
+      membersList.innerHTML = currentFamily.members.map(m =>
+        `<div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: #0f172a; border-radius: 8px; margin-bottom: 8px;">
+          <span style="width: 12px; height: 12px; border-radius: 50%; background: ${m.color || '#334155'};"></span>
+          <span>${m.name}</span>
+          <span style="color: #64748b; font-size: 12px; margin-left: auto;">${m.role}</span>
+        </div>`
+      ).join('');
+
+      document.getElementById('familySettingsModal').style.display = 'flex';
+    }
+
+    function closeFamilySettings() {
+      document.getElementById('familySettingsModal').style.display = 'none';
+    }
+
+    async function leaveFamily() {
+      if (!confirm('Are you sure you want to leave this family? Your entries will no longer be shared.')) return;
+
+      try {
+        const res = await fetch('/api/family/leave', { method: 'DELETE' });
+        const data = await res.json();
+
+        if (res.ok) {
+          closeFamilySettings();
+          await loadFamilyStatus();
+          showTab('capture');
+        } else {
+          alert(data.error || 'Failed to leave family');
+        }
+      } catch (e) {
+        alert('Error leaving family');
+      }
+    }
+
+    async function syncFamily() {
+      const syncPath = document.getElementById('syncPathInput')?.value || currentFamily.syncPath;
+
+      if (!syncPath) {
+        // Prompt for sync path
+        const path = prompt('Enter the sync folder path (e.g., C:\\Users\\Shared\\KinshipFamily or a Dropbox/Google Drive folder):');
+        if (!path) return;
+        currentFamily.syncPath = path;
+      }
+
+      try {
+        // Export first
+        const exportRes = await fetch('/api/sync/export', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ syncPath: syncPath || currentFamily.syncPath })
+        });
+        const exportData = await exportRes.json();
+
+        if (!exportRes.ok) {
+          alert(exportData.error || 'Export failed');
+          return;
+        }
+
+        // Then import
+        const importRes = await fetch('/api/sync/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ syncPath: syncPath || currentFamily.syncPath })
+        });
+        const importData = await importRes.json();
+
+        if (!importRes.ok) {
+          alert(importData.error || 'Import failed');
+          return;
+        }
+
+        // Refresh
+        await loadFamilyStatus();
+
+        alert(`Sync complete! Exported ${exportData.exported} entries, imported ${importData.imported} new entries.`);
+      } catch (e) {
+        alert('Sync error: ' + e.message);
+      }
+    }
+
+    async function toggleFamilyShare() {
+      const toggle = document.getElementById('familyShareToggle');
+      const knob = document.getElementById('familyShareToggleKnob');
+
+      try {
+        const res = await fetch(`/api/lifelog/entries/${currentShareEntryId}/family-share`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: toggle.checked })
+        });
+
+        if (res.ok) {
+          if (toggle.checked) {
+            knob.style.transform = 'translateX(22px)';
+            knob.parentElement.previousElementSibling.nextElementSibling.style.backgroundColor = '#7c3aed';
+          } else {
+            knob.style.transform = 'translateX(0)';
+            knob.parentElement.previousElementSibling.nextElementSibling.style.backgroundColor = '#334155';
+          }
+        }
+      } catch (e) {
+        console.error('Failed to toggle family share:', e);
+        toggle.checked = !toggle.checked;
+      }
+    }
+
+    // Update openShareModal to also load family share status
+    const originalOpenShareModal = openShareModal;
+    async function openShareModal(entryId) {
+      currentShareEntryId = entryId;
+      document.getElementById('shareModal').style.display = 'flex';
+
+      // Find entry
+      const allEntries = await fetch('/api/lifelog/entries').then(r => r.json());
+      const entry = allEntries.find(e => e.id === entryId);
+
+      if (entry) {
+        document.getElementById('shareSummary').textContent = entry.summary || entry.transcript || 'Voice note';
+        document.getElementById('shareTimestamp').textContent = formatTime(entry.timestamp);
+      }
+
+      // Get public share status
+      try {
+        const status = await fetch(`/api/lifelog/entries/${entryId}/share`).then(r => r.json());
+
+        const toggle = document.getElementById('shareToggle');
+        const knob = document.getElementById('shareToggleKnob');
+        const options = document.getElementById('shareOptions');
+
+        toggle.checked = status.shared;
+        if (status.shared) {
+          knob.style.transform = 'translateX(22px)';
+          knob.parentElement.previousElementSibling.nextElementSibling.style.backgroundColor = '#2563eb';
+          options.style.display = 'block';
+          document.getElementById('shareUrl').value = window.location.origin + status.shareUrl;
+          document.getElementById('shareViewCount').textContent = status.shareViewCount || 0;
+          document.getElementById('shareExpiryText').textContent = status.shareExpiresAt
+            ? `Expires ${new Date(status.shareExpiresAt).toLocaleDateString()}`
+            : 'Never expires';
+        } else {
+          knob.style.transform = 'translateX(0)';
+          knob.parentElement.previousElementSibling.nextElementSibling.style.backgroundColor = '#334155';
+          options.style.display = 'none';
+        }
+      } catch (e) {
+        console.error('Failed to load share status:', e);
+      }
+
+      // Get family share status if in family
+      if (currentFamily && currentFamily.hasFamily) {
+        try {
+          const familyStatus = await fetch(`/api/lifelog/entries/${entryId}/family-share`).then(r => r.json());
+
+          const familyToggle = document.getElementById('familyShareToggle');
+          const familyKnob = document.getElementById('familyShareToggleKnob');
+
+          familyToggle.checked = familyStatus.familyShared;
+          if (familyStatus.familyShared) {
+            familyKnob.style.transform = 'translateX(22px)';
+            familyKnob.parentElement.previousElementSibling.nextElementSibling.style.backgroundColor = '#7c3aed';
+          } else {
+            familyKnob.style.transform = 'translateX(0)';
+            familyKnob.parentElement.previousElementSibling.nextElementSibling.style.backgroundColor = '#334155';
+          }
+        } catch (e) {
+          console.error('Failed to load family share status:', e);
+        }
+      }
+    }
+
+    // Close family modals on overlay click
+    ['createFamilyModal', 'joinFamilyModal', 'inviteModal', 'familySettingsModal', 'profileModal'].forEach(id => {
+      document.getElementById(id)?.addEventListener('click', (e) => {
+        if (e.target.id === id && id !== 'profileModal') {
+          document.getElementById(id).style.display = 'none';
+        }
+      });
+    });
   </script>
 </body>
 </html>

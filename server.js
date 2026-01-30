@@ -384,6 +384,61 @@ function saveEntries() {
   fs.writeFileSync(dataFile, JSON.stringify(entries, null, 2));
 }
 
+// ============ FAMILY / IDENTITY SYSTEM ============
+const familyFile = path.join(dataDir, 'family.json');
+const familyFeedFile = path.join(dataDir, 'family-feed.json');
+
+// Default family config
+const defaultFamilyConfig = {
+  deviceId: crypto.randomUUID(),
+  memberName: null,
+  memberColor: '#3b82f6',
+  familyId: null,
+  familyName: null,
+  role: null,
+  joinedAt: null,
+  syncPath: null,
+  lastSyncAt: null,
+  members: [],
+  inviteToken: null
+};
+
+// Load family config
+let familyConfig = { ...defaultFamilyConfig };
+try {
+  if (fs.existsSync(familyFile)) {
+    familyConfig = { ...defaultFamilyConfig, ...JSON.parse(fs.readFileSync(familyFile, 'utf8')) };
+  } else {
+    // First run - save default with generated deviceId
+    fs.writeFileSync(familyFile, JSON.stringify(familyConfig, null, 2));
+    log('Created new device identity');
+  }
+} catch (e) {
+  log('Error loading family config, using defaults', 'ERROR');
+}
+
+function saveFamilyConfig() {
+  fs.writeFileSync(familyFile, JSON.stringify(familyConfig, null, 2));
+}
+
+// Load family feed (entries from other family members)
+let familyFeed = [];
+try {
+  if (fs.existsSync(familyFeedFile)) {
+    familyFeed = JSON.parse(fs.readFileSync(familyFeedFile, 'utf8'));
+  }
+} catch (e) {
+  log('Starting with empty family feed');
+}
+
+function saveFamilyFeed() {
+  fs.writeFileSync(familyFeedFile, JSON.stringify(familyFeed, null, 2));
+}
+
+function generateInviteToken() {
+  return crypto.randomBytes(16).toString('hex');
+}
+
 // Multer for audio uploads
 const upload = multer({ dest: audioDir });
 
@@ -409,7 +464,13 @@ app.post('/api/lifelog/ingest', upload.single('audio'), (req, res) => {
       summary: null,
       sentiment: null,
       processed: false,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      // Owner identity
+      ownerId: familyConfig.deviceId,
+      ownerName: familyConfig.memberName,
+      // Family sharing (defaults to not shared)
+      familyShared: false,
+      familySharedAt: null
     };
     entries.push(entry);
     saveEntries();
@@ -853,6 +914,630 @@ app.get('/share/:token', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'share.html'));
 });
 
+// ============ IDENTITY & FAMILY SYSTEM ============
+
+// Get current identity
+app.get('/api/identity', (req, res) => {
+  res.json({
+    deviceId: familyConfig.deviceId,
+    memberName: familyConfig.memberName,
+    memberColor: familyConfig.memberColor,
+    hasFamily: !!familyConfig.familyId,
+    familyName: familyConfig.familyName,
+    needsSetup: !familyConfig.memberName
+  });
+});
+
+// Set/update identity
+app.post('/api/identity', (req, res) => {
+  const { memberName, memberColor } = req.body;
+
+  if (memberName) {
+    familyConfig.memberName = memberName.trim().substring(0, 50);
+  }
+  if (memberColor) {
+    familyConfig.memberColor = memberColor;
+  }
+
+  saveFamilyConfig();
+  log(`Identity updated: ${familyConfig.memberName}`);
+
+  res.json({
+    success: true,
+    deviceId: familyConfig.deviceId,
+    memberName: familyConfig.memberName,
+    memberColor: familyConfig.memberColor
+  });
+});
+
+// Get family info
+app.get('/api/family', (req, res) => {
+  if (!familyConfig.familyId) {
+    return res.json({ hasFamily: false });
+  }
+
+  res.json({
+    hasFamily: true,
+    familyId: familyConfig.familyId,
+    familyName: familyConfig.familyName,
+    role: familyConfig.role,
+    joinedAt: familyConfig.joinedAt,
+    members: familyConfig.members,
+    syncPath: familyConfig.syncPath,
+    lastSyncAt: familyConfig.lastSyncAt
+  });
+});
+
+// Create new family
+app.post('/api/family/create', (req, res) => {
+  const { familyName } = req.body;
+
+  if (!familyConfig.memberName) {
+    return res.status(400).json({ error: 'Set up your identity first' });
+  }
+
+  if (familyConfig.familyId) {
+    return res.status(400).json({ error: 'Already in a family. Leave first to create a new one.' });
+  }
+
+  if (!familyName || familyName.trim().length === 0) {
+    return res.status(400).json({ error: 'Family name required' });
+  }
+
+  familyConfig.familyId = crypto.randomUUID();
+  familyConfig.familyName = familyName.trim().substring(0, 100);
+  familyConfig.role = 'creator';
+  familyConfig.joinedAt = new Date().toISOString();
+  familyConfig.inviteToken = generateInviteToken();
+  familyConfig.members = [{
+    deviceId: familyConfig.deviceId,
+    name: familyConfig.memberName,
+    color: familyConfig.memberColor,
+    role: 'creator',
+    joinedAt: familyConfig.joinedAt
+  }];
+
+  saveFamilyConfig();
+  log(`Family created: ${familyConfig.familyName}`);
+
+  res.json({
+    success: true,
+    familyId: familyConfig.familyId,
+    familyName: familyConfig.familyName,
+    inviteToken: familyConfig.inviteToken
+  });
+});
+
+// Generate invite link
+app.get('/api/family/invite', (req, res) => {
+  if (!familyConfig.familyId) {
+    return res.status(400).json({ error: 'Not in a family' });
+  }
+
+  if (!familyConfig.inviteToken) {
+    familyConfig.inviteToken = generateInviteToken();
+    saveFamilyConfig();
+  }
+
+  const inviteData = {
+    token: familyConfig.inviteToken,
+    familyId: familyConfig.familyId,
+    familyName: familyConfig.familyName
+  };
+
+  // Base64 encode the invite data for easy sharing
+  const inviteCode = Buffer.from(JSON.stringify(inviteData)).toString('base64url');
+
+  res.json({
+    inviteToken: familyConfig.inviteToken,
+    inviteCode: inviteCode,
+    inviteUrl: `/join-family?code=${inviteCode}`,
+    familyName: familyConfig.familyName
+  });
+});
+
+// Join family via invite code
+app.post('/api/family/join', (req, res) => {
+  const { inviteCode } = req.body;
+
+  if (!familyConfig.memberName) {
+    return res.status(400).json({ error: 'Set up your identity first' });
+  }
+
+  if (familyConfig.familyId) {
+    return res.status(400).json({ error: 'Already in a family. Leave first to join another.' });
+  }
+
+  if (!inviteCode) {
+    return res.status(400).json({ error: 'Invite code required' });
+  }
+
+  try {
+    const inviteData = JSON.parse(Buffer.from(inviteCode, 'base64url').toString());
+
+    if (!inviteData.familyId || !inviteData.familyName) {
+      return res.status(400).json({ error: 'Invalid invite code' });
+    }
+
+    familyConfig.familyId = inviteData.familyId;
+    familyConfig.familyName = inviteData.familyName;
+    familyConfig.role = 'member';
+    familyConfig.joinedAt = new Date().toISOString();
+    familyConfig.members = [{
+      deviceId: familyConfig.deviceId,
+      name: familyConfig.memberName,
+      color: familyConfig.memberColor,
+      role: 'member',
+      joinedAt: familyConfig.joinedAt
+    }];
+
+    saveFamilyConfig();
+    log(`Joined family: ${familyConfig.familyName}`);
+
+    res.json({
+      success: true,
+      familyId: familyConfig.familyId,
+      familyName: familyConfig.familyName
+    });
+  } catch (e) {
+    res.status(400).json({ error: 'Invalid invite code format' });
+  }
+});
+
+// Leave family
+app.delete('/api/family/leave', (req, res) => {
+  if (!familyConfig.familyId) {
+    return res.status(400).json({ error: 'Not in a family' });
+  }
+
+  const oldFamily = familyConfig.familyName;
+
+  familyConfig.familyId = null;
+  familyConfig.familyName = null;
+  familyConfig.role = null;
+  familyConfig.joinedAt = null;
+  familyConfig.inviteToken = null;
+  familyConfig.syncPath = null;
+  familyConfig.lastSyncAt = null;
+  familyConfig.members = [];
+
+  // Clear family feed
+  familyFeed = [];
+  saveFamilyFeed();
+  saveFamilyConfig();
+
+  log(`Left family: ${oldFamily}`);
+
+  res.json({ success: true, message: `Left ${oldFamily}` });
+});
+
+// Toggle family sharing for an entry
+app.post('/api/lifelog/entries/:id/family-share', (req, res) => {
+  const id = parseInt(req.params.id);
+  const entry = entries.find(e => e.id === id);
+
+  if (!entry) {
+    return res.status(404).json({ error: 'Entry not found' });
+  }
+
+  if (!familyConfig.familyId) {
+    return res.status(400).json({ error: 'Not in a family' });
+  }
+
+  const { enabled } = req.body;
+
+  if (enabled) {
+    entry.familyShared = true;
+    entry.familySharedAt = new Date().toISOString();
+  } else {
+    entry.familyShared = false;
+    entry.familySharedAt = null;
+  }
+
+  saveEntries();
+
+  res.json({
+    success: true,
+    familyShared: entry.familyShared,
+    familySharedAt: entry.familySharedAt
+  });
+});
+
+// Get family sharing status for an entry
+app.get('/api/lifelog/entries/:id/family-share', (req, res) => {
+  const id = parseInt(req.params.id);
+  const entry = entries.find(e => e.id === id);
+
+  if (!entry) {
+    return res.status(404).json({ error: 'Entry not found' });
+  }
+
+  res.json({
+    familyShared: entry.familyShared || false,
+    familySharedAt: entry.familySharedAt || null
+  });
+});
+
+// Get family feed (own shared entries + imported family entries)
+app.get('/api/lifelog/family-feed', (req, res) => {
+  if (!familyConfig.familyId) {
+    return res.json({ entries: [], hasFamily: false });
+  }
+
+  // Get own entries shared with family
+  const ownShared = entries
+    .filter(e => e.familyShared)
+    .map(e => ({
+      id: e.id,
+      timestamp: e.timestamp,
+      summary: e.summary,
+      transcript: e.transcript,
+      mood: e.mood,
+      sentiment: e.sentiment,
+      context: e.context,
+      topics: e.topics,
+      ownerId: e.ownerId || familyConfig.deviceId,
+      ownerName: e.ownerName || familyConfig.memberName,
+      ownerColor: familyConfig.memberColor,
+      isOwn: true
+    }));
+
+  // Combine with imported family entries
+  const familyEntries = familyFeed.map(e => ({
+    ...e,
+    isOwn: false
+  }));
+
+  // Combine and sort by timestamp (newest first)
+  const combined = [...ownShared, ...familyEntries]
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    .slice(0, 100);
+
+  res.json({
+    entries: combined,
+    hasFamily: true,
+    familyName: familyConfig.familyName,
+    memberCount: familyConfig.members.length
+  });
+});
+
+// Export family-shared entries for sync
+app.post('/api/sync/export', (req, res) => {
+  if (!familyConfig.familyId) {
+    return res.status(400).json({ error: 'Not in a family' });
+  }
+
+  const { syncPath } = req.body;
+
+  if (syncPath) {
+    familyConfig.syncPath = syncPath;
+    saveFamilyConfig();
+  }
+
+  const exportPath = familyConfig.syncPath;
+
+  if (!exportPath) {
+    return res.status(400).json({ error: 'Sync path not configured. Provide syncPath in request.' });
+  }
+
+  // Ensure sync directory exists
+  const outboxPath = path.join(exportPath, 'outbox', familyConfig.deviceId);
+  if (!fs.existsSync(outboxPath)) {
+    fs.mkdirSync(outboxPath, { recursive: true });
+  }
+
+  // Get family-shared entries
+  const sharedEntries = entries
+    .filter(e => e.familyShared)
+    .map(e => ({
+      id: e.id,
+      timestamp: e.timestamp,
+      summary: e.summary,
+      transcript: e.transcript,
+      mood: e.mood,
+      sentiment: e.sentiment,
+      sentimentScore: e.sentimentScore,
+      context: e.context,
+      topics: e.topics,
+      actionItems: e.actionItems,
+      ownerId: familyConfig.deviceId,
+      ownerName: familyConfig.memberName,
+      ownerColor: familyConfig.memberColor,
+      familyId: familyConfig.familyId,
+      exportedAt: new Date().toISOString()
+    }));
+
+  // Write to outbox
+  const exportFile = path.join(outboxPath, 'entries.json');
+  fs.writeFileSync(exportFile, JSON.stringify(sharedEntries, null, 2));
+
+  // Also write member info
+  const memberFile = path.join(outboxPath, 'member.json');
+  fs.writeFileSync(memberFile, JSON.stringify({
+    deviceId: familyConfig.deviceId,
+    name: familyConfig.memberName,
+    color: familyConfig.memberColor,
+    familyId: familyConfig.familyId,
+    exportedAt: new Date().toISOString()
+  }, null, 2));
+
+  familyConfig.lastSyncAt = new Date().toISOString();
+  saveFamilyConfig();
+
+  log(`Exported ${sharedEntries.length} entries to ${exportFile}`);
+
+  res.json({
+    success: true,
+    exported: sharedEntries.length,
+    path: exportFile
+  });
+});
+
+// Import family entries from sync folder
+app.post('/api/sync/import', (req, res) => {
+  if (!familyConfig.familyId) {
+    return res.status(400).json({ error: 'Not in a family' });
+  }
+
+  const { syncPath } = req.body;
+
+  if (syncPath) {
+    familyConfig.syncPath = syncPath;
+    saveFamilyConfig();
+  }
+
+  const importPath = familyConfig.syncPath;
+
+  if (!importPath) {
+    return res.status(400).json({ error: 'Sync path not configured. Provide syncPath in request.' });
+  }
+
+  const outboxPath = path.join(importPath, 'outbox');
+
+  if (!fs.existsSync(outboxPath)) {
+    return res.json({ success: true, imported: 0, message: 'No outbox folder found' });
+  }
+
+  let importedCount = 0;
+  let newMembers = [];
+
+  // Read all member folders
+  const memberFolders = fs.readdirSync(outboxPath);
+
+  for (const folder of memberFolders) {
+    // Skip own folder
+    if (folder === familyConfig.deviceId) continue;
+
+    const memberPath = path.join(outboxPath, folder);
+    if (!fs.statSync(memberPath).isDirectory()) continue;
+
+    // Read member info
+    const memberFile = path.join(memberPath, 'member.json');
+    if (fs.existsSync(memberFile)) {
+      try {
+        const memberInfo = JSON.parse(fs.readFileSync(memberFile, 'utf8'));
+
+        // Verify same family
+        if (memberInfo.familyId !== familyConfig.familyId) continue;
+
+        // Update members list
+        const existingMember = familyConfig.members.find(m => m.deviceId === memberInfo.deviceId);
+        if (!existingMember) {
+          familyConfig.members.push({
+            deviceId: memberInfo.deviceId,
+            name: memberInfo.name,
+            color: memberInfo.color,
+            role: 'member',
+            joinedAt: memberInfo.exportedAt
+          });
+          newMembers.push(memberInfo.name);
+        } else {
+          existingMember.name = memberInfo.name;
+          existingMember.color = memberInfo.color;
+        }
+      } catch (e) {
+        log(`Error reading member file ${memberFile}: ${e.message}`, 'ERROR');
+      }
+    }
+
+    // Read entries
+    const entriesFile = path.join(memberPath, 'entries.json');
+    if (fs.existsSync(entriesFile)) {
+      try {
+        const memberEntries = JSON.parse(fs.readFileSync(entriesFile, 'utf8'));
+
+        for (const entry of memberEntries) {
+          // Verify same family
+          if (entry.familyId !== familyConfig.familyId) continue;
+
+          // Check if already imported (by id + ownerId)
+          const exists = familyFeed.find(e => e.id === entry.id && e.ownerId === entry.ownerId);
+          if (!exists) {
+            familyFeed.push(entry);
+            importedCount++;
+          } else {
+            // Update existing entry
+            Object.assign(exists, entry);
+          }
+        }
+      } catch (e) {
+        log(`Error reading entries file ${entriesFile}: ${e.message}`, 'ERROR');
+      }
+    }
+  }
+
+  saveFamilyFeed();
+  saveFamilyConfig();
+  familyConfig.lastSyncAt = new Date().toISOString();
+  saveFamilyConfig();
+
+  log(`Imported ${importedCount} entries from family members`);
+
+  res.json({
+    success: true,
+    imported: importedCount,
+    newMembers: newMembers,
+    totalFamilyEntries: familyFeed.length,
+    memberCount: familyConfig.members.length
+  });
+});
+
+// Get sync status
+app.get('/api/sync/status', (req, res) => {
+  res.json({
+    hasFamily: !!familyConfig.familyId,
+    syncPath: familyConfig.syncPath,
+    lastSyncAt: familyConfig.lastSyncAt,
+    familyFeedCount: familyFeed.length,
+    sharedEntriesCount: entries.filter(e => e.familyShared).length
+  });
+});
+
+// Serve join family page
+app.get('/join-family', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'join-family.html'));
+});
+
+// Family weekly digest
+app.get('/api/family/digest/week/:date', async (req, res) => {
+  if (!familyConfig.familyId) {
+    return res.status(400).json({ error: 'Not in a family' });
+  }
+
+  const dateStr = req.params.date;
+  const ai = req.query.ai === 'true';
+
+  // Get week boundaries (Sunday to Saturday)
+  const date = new Date(dateStr + 'T12:00:00');
+  const dayOfWeek = date.getDay();
+  const startOfWeek = new Date(date);
+  startOfWeek.setDate(date.getDate() - dayOfWeek);
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+  const startStr = startOfWeek.toISOString().split('T')[0];
+  const endStr = endOfWeek.toISOString().split('T')[0];
+
+  // Get own family-shared entries in range
+  const ownEntries = entries
+    .filter(e => e.familyShared)
+    .filter(e => {
+      const d = e.timestamp.split('T')[0];
+      return d >= startStr && d <= endStr;
+    })
+    .map(e => ({
+      ...e,
+      ownerName: familyConfig.memberName,
+      isOwn: true
+    }));
+
+  // Get family feed entries in range
+  const familyEntries = familyFeed
+    .filter(e => {
+      const d = e.timestamp.split('T')[0];
+      return d >= startStr && d <= endStr;
+    })
+    .map(e => ({
+      ...e,
+      isOwn: false
+    }));
+
+  // Combine all entries
+  const allEntries = [...ownEntries, ...familyEntries];
+
+  // Group by member
+  const byMember = {};
+  allEntries.forEach(e => {
+    const name = e.ownerName || 'Unknown';
+    if (!byMember[name]) byMember[name] = [];
+    byMember[name].push(e);
+  });
+
+  // Build basic digest data
+  const digest = {
+    weekStart: startStr,
+    weekEnd: endStr,
+    familyName: familyConfig.familyName,
+    totalEntries: allEntries.length,
+    memberCount: Object.keys(byMember).length,
+    byMember: Object.fromEntries(
+      Object.entries(byMember).map(([name, entries]) => [
+        name,
+        {
+          count: entries.length,
+          moods: [...new Set(entries.filter(e => e.mood).map(e => e.mood))],
+          topics: [...new Set(entries.flatMap(e => e.topics || []))]
+        }
+      ])
+    )
+  };
+
+  // Generate AI digest if requested
+  if (ai && process.env.ANTHROPIC_API_KEY) {
+    try {
+      const aiDigest = await generateFamilyWeeklyDigest(allEntries, byMember, startStr, endStr, familyConfig.familyName);
+      digest.ai = aiDigest;
+    } catch (err) {
+      log(`Family digest AI error: ${err.message}`, 'ERROR');
+      digest.aiError = err.message;
+    }
+  }
+
+  res.json(digest);
+});
+
+async function generateFamilyWeeklyDigest(allEntries, byMember, startDate, endDate, familyName) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error('ANTHROPIC_API_KEY not set');
+  }
+
+  // Build member summaries
+  const memberSummaries = Object.entries(byMember).map(([name, memberEntries]) => {
+    const summaries = memberEntries.map(e => e.summary || e.transcript?.substring(0, 100) || '(voice note)').join('; ');
+    const moods = [...new Set(memberEntries.filter(e => e.mood).map(e => e.mood))].join(', ');
+    const topics = [...new Set(memberEntries.flatMap(e => e.topics || []))].join(', ');
+    return `${name}: ${memberEntries.length} entries. ${summaries}${moods ? ` [Moods: ${moods}]` : ''}${topics ? ` [Topics: ${topics}]` : ''}`;
+  }).join('\n\n');
+
+  const allTopics = [...new Set(allEntries.flatMap(e => e.topics || []))];
+  const allMoods = [...new Set(allEntries.filter(e => e.mood).map(e => e.mood))];
+
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1200,
+    messages: [{
+      role: 'user',
+      content: `Generate a family weekly digest for "${familyName}" from ${startDate} to ${endDate}. This combines voice journal entries shared within the family.
+
+Family members' entries:
+${memberSummaries}
+
+Topics across the family: ${allTopics.join(', ') || 'none'}
+Moods across the family: ${allMoods.join(', ') || 'none'}
+
+Create a warm, insightful family digest that celebrates shared moments and individual achievements. Respond in JSON format only:
+{
+  "title": "A brief title for the family's week (2-5 words)",
+  "narrative": "A 3-4 paragraph reflection on the family's week, noting individual highlights and shared themes. Written warmly, addressing the family as a group.",
+  "overallMood": "one word for the family's overall mood",
+  "familyThemes": ["shared theme or activity 1", "theme 2"],
+  "memberHighlights": [
+    {"name": "member name", "highlight": "their main accomplishment or moment"},
+    ...
+  ],
+  "sharedMoments": ["moment that involved or affected multiple family members"] or [],
+  "familyWins": ["accomplishment to celebrate as a family"],
+  "lookingAhead": "An encouraging thought for the family for the coming week"
+}`
+    }]
+  });
+
+  const text = response.content[0].text;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('Invalid family digest response');
+  return JSON.parse(jsonMatch[0]);
+}
+
 // ============ BEHAVIORAL FEATURES ============
 
 // Quick mood capture (no audio required)
@@ -877,7 +1562,13 @@ app.post('/api/lifelog/mood', (req, res) => {
       mood: mood,
       entryType: 'mood',
       processed: true,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      // Owner identity
+      ownerId: familyConfig.deviceId,
+      ownerName: familyConfig.memberName,
+      // Family sharing
+      familyShared: false,
+      familySharedAt: null
     };
 
     entries.push(entry);

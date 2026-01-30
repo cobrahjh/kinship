@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#2563eb">
+  <title>Join Family - Kinship</title>
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      min-height: 100vh;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .header {
+      text-align: center;
+      padding: 32px 20px;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      border-radius: 20px;
+      margin-bottom: 24px;
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .header p {
+      opacity: 0.9;
+      font-size: 16px;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 24px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #f8fafc;
+      font-size: 16px;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+    .color-picker {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .color-option {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .color-option:hover {
+      transform: scale(1.1);
+    }
+    .color-option.selected {
+      border-color: #fff;
+    }
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn:hover {
+      opacity: 0.9;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #334155;
+      color: #f8fafc;
+      margin-top: 12px;
+    }
+    .message {
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .message.error {
+      background: #7f1d1d;
+      color: #fca5a5;
+    }
+    .message.success {
+      background: #14532d;
+      color: #86efac;
+    }
+    .message.info {
+      background: #1e3a5f;
+      color: #93c5fd;
+    }
+    .family-info {
+      text-align: center;
+      padding: 20px;
+      background: #0f172a;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    .family-info h3 {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+    .family-info p {
+      color: #64748b;
+      font-size: 14px;
+    }
+    .step {
+      display: none;
+    }
+    .step.active {
+      display: block;
+    }
+    .divider {
+      text-align: center;
+      color: #64748b;
+      margin: 24px 0;
+      position: relative;
+    }
+    .divider::before,
+    .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 1px;
+      background: #334155;
+    }
+    .divider::before { left: 0; }
+    .divider::after { right: 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Kinship</h1>
+      <p>Join Your Family</p>
+    </div>
+
+    <div class="card">
+      <div id="message"></div>
+
+      <!-- Step 1: Identity Setup (if needed) -->
+      <div class="step" id="step-identity">
+        <h2 style="font-size: 18px; margin-bottom: 16px;">First, tell us about you</h2>
+
+        <div class="form-group">
+          <label>Your Name</label>
+          <input type="text" id="memberName" placeholder="Enter your name" maxlength="50">
+        </div>
+
+        <div class="form-group">
+          <label>Pick Your Color</label>
+          <div class="color-picker" id="colorPicker">
+            <div class="color-option selected" style="background: #3b82f6;" data-color="#3b82f6"></div>
+            <div class="color-option" style="background: #22c55e;" data-color="#22c55e"></div>
+            <div class="color-option" style="background: #f59e0b;" data-color="#f59e0b"></div>
+            <div class="color-option" style="background: #ef4444;" data-color="#ef4444"></div>
+            <div class="color-option" style="background: #8b5cf6;" data-color="#8b5cf6"></div>
+            <div class="color-option" style="background: #ec4899;" data-color="#ec4899"></div>
+            <div class="color-option" style="background: #06b6d4;" data-color="#06b6d4"></div>
+            <div class="color-option" style="background: #84cc16;" data-color="#84cc16"></div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="saveIdentityBtn" onclick="saveIdentity()">Continue</button>
+      </div>
+
+      <!-- Step 2: Join Family -->
+      <div class="step" id="step-join">
+        <div class="family-info" id="familyInfo" style="display: none;">
+          <h3 id="familyNameDisplay"></h3>
+          <p>You've been invited to join this family</p>
+        </div>
+
+        <div id="manualEntry" style="display: none;">
+          <div class="form-group">
+            <label>Invite Code</label>
+            <input type="text" id="inviteCode" placeholder="Paste invite code here">
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="joinBtn" onclick="joinFamily()">Join Family</button>
+
+        <div class="divider">or</div>
+
+        <button class="btn btn-secondary" onclick="window.location.href='/'">Go to Kinship Home</button>
+      </div>
+
+      <!-- Step 3: Success -->
+      <div class="step" id="step-success">
+        <div class="message success">
+          <h3 style="margin-bottom: 8px;">Welcome to the family!</h3>
+          <p>You're now connected with your family.</p>
+        </div>
+
+        <button class="btn btn-primary" onclick="window.location.href='/'">Open Kinship</button>
+      </div>
+
+      <!-- Already in family -->
+      <div class="step" id="step-already">
+        <div class="message info">
+          <h3 style="margin-bottom: 8px;">Already in a family</h3>
+          <p>You're already a member of <strong id="currentFamilyName"></strong>.</p>
+          <p style="margin-top: 8px; font-size: 13px;">Leave your current family first to join another.</p>
+        </div>
+
+        <button class="btn btn-primary" onclick="window.location.href='/'">Open Kinship</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedColor = '#3b82f6';
+    let inviteData = null;
+
+    // Parse invite code from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviteCode = urlParams.get('code');
+
+    // Color picker
+    document.querySelectorAll('.color-option').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.color-option').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedColor = el.dataset.color;
+      });
+    });
+
+    // Check current state and show appropriate step
+    async function init() {
+      try {
+        // Check identity
+        const identityRes = await fetch('/api/identity');
+        const identity = await identityRes.json();
+
+        // Check if already in a family
+        const familyRes = await fetch('/api/family');
+        const family = await familyRes.json();
+
+        if (family.hasFamily) {
+          document.getElementById('currentFamilyName').textContent = family.familyName;
+          showStep('step-already');
+          return;
+        }
+
+        // Parse invite code if present
+        if (inviteCode) {
+          try {
+            inviteData = JSON.parse(atob(inviteCode.replace(/-/g, '+').replace(/_/g, '/')));
+            document.getElementById('familyNameDisplay').textContent = inviteData.familyName;
+            document.getElementById('familyInfo').style.display = 'block';
+            document.getElementById('inviteCode').value = inviteCode;
+          } catch (e) {
+            showMessage('Invalid invite link', 'error');
+            document.getElementById('manualEntry').style.display = 'block';
+          }
+        } else {
+          document.getElementById('manualEntry').style.display = 'block';
+        }
+
+        // Check if needs identity setup
+        if (identity.needsSetup) {
+          showStep('step-identity');
+        } else {
+          showStep('step-join');
+        }
+      } catch (e) {
+        showMessage('Error connecting to Kinship', 'error');
+      }
+    }
+
+    function showStep(stepId) {
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById(stepId).classList.add('active');
+    }
+
+    function showMessage(text, type = 'info') {
+      const el = document.getElementById('message');
+      el.className = `message ${type}`;
+      el.textContent = text;
+      el.style.display = 'block';
+    }
+
+    async function saveIdentity() {
+      const name = document.getElementById('memberName').value.trim();
+
+      if (!name) {
+        showMessage('Please enter your name', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/identity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ memberName: name, memberColor: selectedColor })
+        });
+
+        if (res.ok) {
+          showStep('step-join');
+          document.getElementById('message').style.display = 'none';
+        } else {
+          const err = await res.json();
+          showMessage(err.error || 'Failed to save identity', 'error');
+        }
+      } catch (e) {
+        showMessage('Error saving identity', 'error');
+      }
+    }
+
+    async function joinFamily() {
+      const code = document.getElementById('inviteCode').value.trim() || inviteCode;
+
+      if (!code) {
+        showMessage('Please enter an invite code', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/family/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inviteCode: code })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          showStep('step-success');
+        } else {
+          showMessage(data.error || 'Failed to join family', 'error');
+        }
+      } catch (e) {
+        showMessage('Error joining family', 'error');
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

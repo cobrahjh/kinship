@@ -45,6 +45,14 @@ Share individual entries with others:
 - View count tracking for shared links
 - Revoke access anytime by disabling the share
 
+### Family Sharing
+Share voice notes with your family and get combined insights:
+- **Create/Join Family**: Create a family group or join via invite code
+- **Shared Feed**: See entries that family members have shared
+- **Selective Sharing**: Choose which entries to share with family
+- **Family Digest**: AI-generated weekly digest combining insights from all family members
+- **File-Based Sync**: Sync via shared folder (Dropbox, Google Drive, OneDrive)
+
 ---
 
 ## Project Structure
@@ -55,13 +63,16 @@ C:\kinship\
 ├── package.json        # Dependencies (express, multer, openai, @anthropic-ai/sdk)
 ├── CLAUDE.md           # This documentation
 ├── public/
-│   ├── index.html      # Main dashboard (Capture, Journal, Search, Digest tabs)
+│   ├── index.html      # Main dashboard (Capture, Journal, Search, Digest, Family tabs)
 │   ├── share.html      # Public share page for shared entries
+│   ├── join-family.html # Family invite acceptance page
 │   └── manifest.json   # PWA manifest
 ├── plugins/
 │   └── exercise/       # Future: Exercise tracking plugin
 ├── data/
 │   ├── entries.json    # Voice note metadata + embeddings
+│   ├── family.json     # Identity and family configuration
+│   ├── family-feed.json # Cached entries from family members
 │   └── audio/          # Audio recordings (webm)
 └── docs/
     ├── LIFELOG-CONSUMER-PRODUCT-SPEC.md
@@ -98,6 +109,28 @@ C:\kinship\
 | GET | `/api/lifelog/shared` | List all shared entries |
 | GET | `/api/share/:token` | Public: get shared entry data |
 | GET | `/share/:token` | Public: share page |
+
+### Identity & Family
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/identity` | Get current user identity |
+| POST | `/api/identity` | Set user name/color |
+| GET | `/api/family` | Get family info and members |
+| POST | `/api/family/create` | Create new family |
+| POST | `/api/family/join` | Join family via invite code |
+| GET | `/api/family/invite` | Generate invite link/code |
+| DELETE | `/api/family/leave` | Leave family |
+| POST | `/api/lifelog/entries/:id/family-share` | Toggle family sharing |
+| GET | `/api/lifelog/entries/:id/family-share` | Get family share status |
+| GET | `/api/lifelog/family-feed` | Get combined family feed |
+| GET | `/api/family/digest/week/:date` | Family weekly digest (?ai=true for AI) |
+
+### Sync
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/sync/export` | Export shared entries to sync folder |
+| POST | `/api/sync/import` | Import family entries from sync folder |
+| GET | `/api/sync/status` | Get sync status |
 
 ### System
 | Method | Endpoint | Description |
@@ -161,7 +194,7 @@ Features:
 - [x] Plugin system for exercise, etc.
 
 ### Phase 4
-- [ ] Family sharing
+- [x] Family sharing
 - [x] Mobile PWA optimization
 - [ ] Wearable integration
 
