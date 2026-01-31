@@ -76,7 +76,7 @@ class WearableListenerService : com.google.android.gms.wearable.WearableListener
 
                     val result = api.uploadAudioBytes(
                         audioData = audioData,
-                        filename = "watch_${System.currentTimeMillis()}.webm",
+                        filename = "watch_${System.currentTimeMillis()}.wav",
                         context = "auto"
                     )
 
@@ -110,7 +110,7 @@ class WearableListenerService : com.google.android.gms.wearable.WearableListener
 
                     val result = api.uploadAudioBytes(
                         audioData = audioData,
-                        filename = "watch_${System.currentTimeMillis()}.webm",
+                        filename = "watch_${System.currentTimeMillis()}.wav",
                         context = dataMap.getString("context", "auto")
                     )
 

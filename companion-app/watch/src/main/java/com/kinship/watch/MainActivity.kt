@@ -19,6 +19,8 @@ import com.kinship.watch.databinding.ActivityMainBinding
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import java.io.ByteArrayOutputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 class MainActivity : AppCompatActivity() {
 
@@ -115,11 +117,13 @@ class MainActivity : AppCompatActivity() {
                 audioRecord?.release()
                 audioRecord = null
 
-                val audioData = outputStream.toByteArray()
-                Log.d(TAG, "Recording stopped: ${audioData.size} bytes")
+                val pcmData = outputStream.toByteArray()
+                Log.d(TAG, "Recording stopped: ${pcmData.size} bytes PCM")
 
-                if (audioData.isNotEmpty()) {
-                    sendToPhone(audioData)
+                if (pcmData.isNotEmpty()) {
+                    val wavData = createWavData(pcmData)
+                    Log.d(TAG, "Converted to WAV: ${wavData.size} bytes")
+                    sendToPhone(wavData)
                 }
 
             } catch (e: Exception) {
@@ -135,6 +139,43 @@ class MainActivity : AppCompatActivity() {
         isRecording = false
         updateUI()
         vibrate()
+    }
+
+    /**
+     * Convert raw PCM data to WAV format by adding a 44-byte header
+     */
+    private fun createWavData(pcmData: ByteArray): ByteArray {
+        val channels = 1 // Mono
+        val bitsPerSample = 16
+        val byteRate = SAMPLE_RATE * channels * bitsPerSample / 8
+        val blockAlign = channels * bitsPerSample / 8
+        val dataSize = pcmData.size
+        val fileSize = 36 + dataSize
+
+        val header = ByteBuffer.allocate(44).apply {
+            order(ByteOrder.LITTLE_ENDIAN)
+
+            // RIFF header
+            put("RIFF".toByteArray())
+            putInt(fileSize)
+            put("WAVE".toByteArray())
+
+            // fmt subchunk
+            put("fmt ".toByteArray())
+            putInt(16) // Subchunk1Size for PCM
+            putShort(1) // AudioFormat: PCM = 1
+            putShort(channels.toShort())
+            putInt(SAMPLE_RATE)
+            putInt(byteRate)
+            putShort(blockAlign.toShort())
+            putShort(bitsPerSample.toShort())
+
+            // data subchunk
+            put("data".toByteArray())
+            putInt(dataSize)
+        }
+
+        return header.array() + pcmData
     }
 
     private suspend fun sendToPhone(audioData: ByteArray) {

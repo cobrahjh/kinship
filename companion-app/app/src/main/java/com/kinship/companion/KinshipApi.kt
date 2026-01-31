@@ -93,7 +93,7 @@ class KinshipApi(private val context: Context) {
      */
     suspend fun uploadAudioBytes(
         audioData: ByteArray,
-        filename: String = "watch_recording.webm",
+        filename: String = "watch_recording.wav",
         context: String = "auto"
     ): Result<UploadResponse> = withContext(Dispatchers.IO) {
         try {
@@ -104,7 +104,7 @@ class KinshipApi(private val context: Context) {
                 .addFormDataPart(
                     "audio",
                     filename,
-                    audioData.toRequestBody("audio/webm".toMediaType())
+                    audioData.toRequestBody("audio/wav".toMediaType())
                 )
                 .addFormDataPart("device", "watch")
                 .addFormDataPart("context", context)
